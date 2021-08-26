@@ -15,7 +15,8 @@ class SrclocModule(mp_module.MPModule):
     def mavlink_packet(self, m):
         'handle a MAVLink packet'''
         if m.get_type() == 'GLOBAL_POSITION_INT':
-            print("My Int: %.7f %.7f" % (m.lat*1.0e-7, m.lon*1.0e-7))
+            #print("My Int: %.7f %.7f" % (m.lat*1.0e-7, m.lon*1.0e-7))
+            self.master.mav.plume_send(5.0)
 
 def init(mpstate):
     '''initialise module'''
