@@ -18,8 +18,8 @@ class SrclocModule(mp_module.MPModule):
         '''initialisation code'''
         self.hlat = -353632621   #home location, in (approx) centimetres
         self.hlon = 1491652374
-        self.slat = self.hlat+400   #source location
-        self.slon = self.hlon-200
+        self.slat = self.hlat+400   #source location, ~4m north
+        self.slon = self.hlon-200   # ~2m west
         self.elat = 0 #estimated source location
         self.elon = 0 
         self.upto = 0
@@ -87,6 +87,7 @@ class SrclocModule(mp_module.MPModule):
                 self.elon = pred_params[2]
                 self.showIcon(5, self.elat, self.elon, 'bluestar.png') #estimated location of source
                 self.console.set_status('PlEL', 'PlEL %.7f %.7f' % (self.elat*1e-7, self.elon*1e-7), row=5)
+                # self.master.mav.plume_est_loc(self.elat, self.elon, m.alt)
             
         # if m.get_type() == 'PLUME_EST_LOC':
         #     self.elat = self.hlat + m.x*111
