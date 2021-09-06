@@ -24,10 +24,14 @@ class SrclocModule(mp_module.MPModule):
         self.elon = 0 
         self.upto = 0
         self.done10 = 0
-        self.xyarr = np.ones((2, 300))*20e-7 #for now, initialising to 20deg lat long & 0 strength - i.e. very far from the reading
-        self.strearr = np.zeros(300)
+        self.numsave = 200
+        self.xyarr = np.ones((2, self.numsave))*20e7 #for now, initialising to 20deg lat long & 0 strength - i.e. very far from the reading
+        self.strearr = np.zeros(self.numsave)
         self.now = 0
         self.prev = 0
+        self.gauEPar = np.array([0.5,0,0.5])
+        self.gauTPar = np.array([0.25, 0, 0.5])
+        self.add_command('sl', self.cmd_sl, "Set source location", ['sl x y'])#['<%s|all>' % x])
         # self.console.set_status('SRLoc', 'SRLoc %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
         # self.console.set_status('SELoc', 'SELoc --- ---', row=5)
         self.console.set_status('PlSt', 'Plume Strength ---', row=5)
@@ -65,7 +69,7 @@ class SrclocModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
-            stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, 0.25, 0, 0.5)
+            stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
             if (self.now - self.prev) > 0.7e3:
                 #print("Running", self.now - self.prev)
                 self.xyarr[:,self.upto] = m.lat, m.lon
@@ -74,26 +78,57 @@ class SrclocModule(mp_module.MPModule):
                 if self.upto > 19 & self.done10 == 0:
                     self.done10 = 1
                     print("Starting SrcLoc")
-                if self.upto > 299:
+                if self.upto > (self.numsave-1):
                     self.upto = 0
                 self.prev = self.now
             # self.master.mav.plume_strength_send(stre)
             self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (stre, self.upto), row=5)
             if self.done10 == 1:
                 i = self.strearr.argmax()
-                guess = [1, self.xyarr[0,i], self.xyarr[1,i], 0.5, 0, 0.5]
+                guess = [1, self.xyarr[0,i], self.xyarr[1,i], self.gauEPar[0],self.gauEPar[1], self.gauEPar[2]]
                 pred_params, uncert_cov = opt.curve_fit(self.gauss2d, self.xyarr, self.strearr, p0=guess)
                 self.elat = pred_params[1]
                 self.elon = pred_params[2]
                 self.showIcon(5, self.elat, self.elon, 'bluestar.png') #estimated location of source
                 self.console.set_status('PlEL', 'PlEL %.7f %.7f' % (self.elat*1e-7, self.elon*1e-7), row=5)
-                # self.master.mav.plume_est_loc(self.elat, self.elon, m.alt)
+                self.master.mav.plume_est_loc_send(self.elat, self.elon, m.alt)
             
         # if m.get_type() == 'PLUME_EST_LOC':
         #     self.elat = self.hlat + m.x*111
         #     self.elon = self.hlon + m.y*111
         #     self.showIcon(5, self.elat, self.elon, 'bluestar.png') #estimated location of source
         #     self.console.set_status('PlStEL', 'Plume Strength EstLoc %.7f %.7f' % (self.elat, self.elon), row=5)
+
+    def cmd_sl(self, args):
+        '''handle Source Location setting'''
+        if len(args) == 0:
+             print("Usage: set x y | tpar a b c | epar a b c | ppar")
+        else:
+            if args[0] == 'set':
+                lato = int(float(args[1])*89.83204953368922)
+                lono = int(float(args[2])*89.83204953368922)
+                self.slat = self.hlat + lato
+                self.slon = self.hlon + lono
+                self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
+                self.showIcon(4, self.slat, self.slon, 'redstar.png')
+                self.xyarr = np.ones((2, self.numsave))*20e7
+                self.strearr = np.zeros(self.numsave)
+                self.upto = 0
+                #print('Set source to %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7))
+            if args[0] == 'tpar':
+                self.gauTPar[0] = float(args[1])
+                self.gauTPar[1] = float(args[2])
+                self.gauTPar[2] = float(args[3])
+                print('Set source true params to %.2f %.2f %0.2f' % tuple(self.gauTPar))
+            if args[0] == 'epar':
+                self.gauEPar[0] = float(args[1])
+                self.gauEPar[1] = float(args[2])
+                self.gauEPar[2] = float(args[3])
+                print('Set source estimated params to %.2f %.2f %0.2f' % tuple(self.gauEPar))
+            if args[0] == 'ppar':
+                print('Source estimated params are %.2f %.2f %0.2f' % tuple(self.gauEPar))
+                print('Source true params are %.2f %.2f %0.2f' %  tuple(self.gauTPar))
+
 
 #latitude means north
 #Latitude: -35.282001 
