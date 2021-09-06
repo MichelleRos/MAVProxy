@@ -81,18 +81,20 @@ class SrclocModule(mp_module.MPModule):
                 if self.upto > (self.numsave-1):
                     self.upto = 0
                 self.prev = self.now
-            # self.master.mav.plume_strength_send(stre)
+            self.master.mav.plume_strength_send(stre)
             self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (stre, self.upto), row=5)
             if self.done10 == 1:
                 i = self.strearr.argmax()
                 guess = [1, self.xyarr[0,i], self.xyarr[1,i], self.gauEPar[0],self.gauEPar[1], self.gauEPar[2]]
                 pred_params, uncert_cov = opt.curve_fit(self.gauss2d, self.xyarr, self.strearr, p0=guess)
+                #print('Uncert_cov ', np.mean(uncert_cov), 'max ',np.nanmax(uncert_cov), 'min ',np.amin(uncert_cov))
                 self.elat = pred_params[1]
                 self.elon = pred_params[2]
+                cov = np.mean(abs(uncert_cov))
                 self.showIcon(5, self.elat, self.elon, 'bluestar.png') #estimated location of source
-                self.console.set_status('PlEL', 'PlEL %.7f %.7f' % (self.elat*1e-7, self.elon*1e-7), row=5)
-                self.master.mav.plume_est_loc_send(self.elat, self.elon, m.alt)
-            
+                self.console.set_status('PlEL', 'PlEL %.7f %.7f cov %.4f' % (self.elat*1e-7, self.elon*1e-7, cov), row=5)
+                self.master.mav.plume_est_loc_send(self.elat, self.elon, m.alt, cov)
+                self.master.mav.plume_par_send(self.gauEPar[0], self.gauEPar[1], self.gauEPar[2], self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
         # if m.get_type() == 'PLUME_EST_LOC':
         #     self.elat = self.hlat + m.x*111
         #     self.elon = self.hlon + m.y*111
