@@ -18,8 +18,10 @@ class SrclocModule(mp_module.MPModule):
         '''initialisation code'''
         self.hlat = -353632621   #home location, in (approx) centimetres
         self.hlon = 1491652374
-        self.slat = self.hlat+400   #source location, ~4m north
-        self.slon = self.hlon-200   # ~2m west
+        # self.solat = 
+        # self.solon
+        self.slat = self.hlat+100   #North-South #source location (currently just an offset from home for start point)
+        self.slon = self.hlon+250  #East-West
         self.elat = 0 #estimated source location
         self.elon = 0 
         self.upto = 0
@@ -39,6 +41,13 @@ class SrclocModule(mp_module.MPModule):
         self.console.set_status('PlSt', 'Plume Strength ---', row=5)
         self.showIcon(4, self.slat, self.slon, 'redstar.png') #true location of source
         self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
+        self.console.set_status('PlUs', 'PlUs %d %d' % (0, 0), row=5)
+        self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',')
+        self.datasx = 500
+        self.datasy = 1000
+        self.pompy = np.flipud(self.pompy.T)
+        self.maxstr = np.amax(self.pompy)
+        print("Max strength is", self.maxstr)
 
     #[ab;bc] "is essentially 0.5 over the covariance matrix", A is the amplitude, and (x0, y0) is the center
     def gauss2d(self, xy, amp, x0, y0, a, b, c):
@@ -51,6 +60,25 @@ class SrclocModule(mp_module.MPModule):
         inner += 2 * b * (x - x0) * (y - y0)    #b is diagonal variance
         inner += c * (y - y0)**2
         return amp * np.exp(-inner)
+
+    def pompy2d(self, xy, x0, y0):
+        x, y = xy
+        x = x - self.hlat #work in approx cm per pixel
+        y = y - self.hlon
+        x0 = x0 - self.hlat
+        y0 = y0 - self.hlon
+        px = x+x0
+        py = y+y0
+        self.console.set_status('PlUs', 'PlUs %d %d' % (py, px), row=5)
+        if px > self.datasx:
+            px = self.datasx
+        if px < 0:
+            px = 0
+        if py > self.datasy:
+            py = self.datasy
+        if py < 0:
+            py = 0
+        return self.pompy[px,py]
     
     def showIcon(self, id, lat, lon, img):
         for mp in self.module_matching('map*'):
@@ -71,7 +99,8 @@ class SrclocModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
-            self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
+            #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
+            self.stre = self.pompy2d((m.lat, m.lon), self.slat, self.slon)
             if (self.now - self.prev) > 0.7e3:
                 #print("Running", self.now - self.prev)
                 self.xyarr[:,self.upto] = m.lat, m.lon
@@ -84,15 +113,14 @@ class SrclocModule(mp_module.MPModule):
                     self.upto = 0
                 self.prev = self.now
             self.master.mav.plume_strength_send(self.stre)
-            if self.done10 == 1:
+            if self.done10 == 1 & False:
                 i = self.strearr.argmax()
                 guess = [1, self.xyarr[0,i], self.xyarr[1,i], self.gauEPar[0],self.gauEPar[1], self.gauEPar[2]]
                 pred_params, uncert_cov = opt.curve_fit(self.gauss2d, self.xyarr, self.strearr, p0=guess)
-                #print('Uncert_cov ', np.mean(uncert_cov), 'max ',np.nanmax(uncert_cov), 'min ',np.amin(uncert_cov))
                 self.elat = pred_params[1]
                 self.elon = pred_params[2]
                 self.cov = np.mean(abs(uncert_cov))
-                self.master.mav.plume_est_loc_send(self.elat, self.elon, m.alt, self.cov)
+                #self.master.mav.plume_est_loc_send(self.elat, self.elon, m.alt, self.cov)
                 # self.master.mav.plume_par_send(self.gauEPar[0], self.gauEPar[1], self.gauEPar[2], self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
         # if m.get_type() == 'PLUME_EST_LOC':
         #     self.elat = self.hlat + m.x*111
@@ -129,7 +157,7 @@ class SrclocModule(mp_module.MPModule):
     def idle_task(self):
     #     '''called on idle'''
     #     # update status for detected plume strength
-        self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (self.stre, self.upto), row=5)
+        self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=5)
     #     # update icon & status for estimated location of source
         self.showIcon(5, self.elat, self.elon, 'bluestar.png')
         self.console.set_status('PlEL', 'PlEL %.7f %.7f cov %.4f' % (self.elat*1e-7, self.elon*1e-7, self.cov), row=5)
@@ -142,3 +170,22 @@ class SrclocModule(mp_module.MPModule):
 def init(mpstate):
     '''initialise module'''
     return SrclocModule(mpstate)
+
+
+        # def loadcsv(self, filename):
+        # try:
+        #     import pkg_resources
+        #     name = __name__
+        #     if name == "__main__":
+        #         name = "MAVProxy.modules.mavproxy_srcloc"
+        #     stream = pkg_resources.resource_stream(name, "data/%s" % filename).read()
+        #     raw = np.fromstring(stream, dtype=np.float64)
+        # except Exception:
+        #     try:
+        #         stream = open(os.path.join(__file__, 'data', filename)).read()
+        #         raw = np.fromstring(stream, dtype=np.float64)
+        #     except Exception:
+        #         #we're in a Windows exe, where pkg_resources doesn't work
+        #         import pkgutil
+        #         raw = pkgutil.get_data( 'MAVProxy', 'modules//mavproxy_srcloc//data//' + filename)
+        # return raw
