@@ -18,10 +18,10 @@ class SrclocModule(mp_module.MPModule):
         '''initialisation code'''
         self.hlat = -353632621   #home location, in (approx) centimetres
         self.hlon = 1491652374
-        # self.solat = 
-        # self.solon
-        self.slat = self.hlat+100   #North-South #source location (currently just an offset from home for start point)
-        self.slon = self.hlon+250  #East-West
+        self.sox = 926
+        self.soy = 249
+        self.slat = self.hlat+600   #North-South #source location (currently just an offset from home for start point)
+        self.slon = self.hlon+200  #East-West
         self.elat = 0 #estimated source location
         self.elon = 0 
         self.upto = 0
@@ -42,7 +42,7 @@ class SrclocModule(mp_module.MPModule):
         self.showIcon(4, self.slat, self.slon, 'redstar.png') #true location of source
         self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
         self.console.set_status('PlUs', 'PlUs %d %d' % (0, 0), row=5)
-        self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',')
+        self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
         self.datasx = 500
         self.datasy = 1000
         self.pompy = np.flipud(self.pompy.T)
@@ -67,8 +67,8 @@ class SrclocModule(mp_module.MPModule):
         y = y - self.hlon
         x0 = x0 - self.hlat
         y0 = y0 - self.hlon
-        px = x+x0
-        py = y+y0
+        px = x-x0+self.sox
+        py = y-y0+self.soy
         self.console.set_status('PlUs', 'PlUs %d %d' % (py, px), row=5)
         if px > self.datasx:
             px = self.datasx
