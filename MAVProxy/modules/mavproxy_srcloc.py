@@ -39,10 +39,10 @@ class SrclocModule(mp_module.MPModule):
         # self.console.set_status('SRLoc', 'SRLoc %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
         # self.console.set_status('SELoc', 'SELoc --- ---', row=5)
         self.console.set_status('PlSt', 'Plume Strength ---', row=5)
-        self.showIcon(4, self.slat, self.slon, 'redstar.png') #true location of source
+        self.showIcon('sl4', self.slat, self.slon, 'redstar.png') #true location of source
         self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
         self.console.set_status('PlUs', 'PlUs %d %d' % (0, 0), row=5)
-        self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
+        self.pompy = np.loadtxt('/home/michelle/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
         self.datasx = 500
         self.datasy = 1000
         self.pompy = np.flipud(self.pompy.T)
@@ -159,10 +159,10 @@ class SrclocModule(mp_module.MPModule):
     #     # update status for detected plume strength
         self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=5)
     #     # update icon & status for estimated location of source
-        self.showIcon(5, self.elat, self.elon, 'bluestar.png')
+        self.showIcon('sl5', self.elat, self.elon, 'bluestar.png')
         self.console.set_status('PlEL', 'PlEL %.7f %.7f cov %.4f' % (self.elat*1e-7, self.elon*1e-7, self.cov), row=5)
     #     # update icon & status for true location of source
-        self.showIcon(4, self.slat, self.slon, 'redstar.png')
+        self.showIcon('sl4', self.slat, self.slon, 'redstar.png')
         self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
 
 #latitude means north
