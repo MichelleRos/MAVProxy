@@ -36,12 +36,12 @@ class SrclocModule(mp_module.MPModule):
         self.cov = 0
         self.stre = 0
         self.add_command('sl', self.cmd_sl, "Set source location", ['sl x y'])#['<%s|all>' % x])
-        # self.console.set_status('SRLoc', 'SRLoc %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
-        # self.console.set_status('SELoc', 'SELoc --- ---', row=5)
-        self.console.set_status('PlSt', 'Plume Strength ---', row=5)
+        # self.console.set_status('SRLoc', 'SRLoc %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
+        # self.console.set_status('SELoc', 'SELoc --- ---', row=6)
+        self.console.set_status('PlSt', 'Plume Strength ---', row=6)
         self.showIcon('sl4', self.slat, self.slon, 'redstar.png') #true location of source
-        self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
-        self.console.set_status('PlUs', 'PlUs %d %d' % (0, 0), row=5)
+        self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
+        self.console.set_status('PlUs', 'PlUs %d %d' % (0, 0), row=6)
         self.pompy = np.loadtxt('/home/michelle/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
         self.datasx = 500
         self.datasy = 1000
@@ -62,6 +62,7 @@ class SrclocModule(mp_module.MPModule):
         return amp * np.exp(-inner)
 
     def pompy2d(self, xy, x0, y0):
+        #x0,y0 are slat & slon passed in
         x, y = xy
         x = x - self.hlat #work in approx cm per pixel
         y = y - self.hlon
@@ -69,7 +70,7 @@ class SrclocModule(mp_module.MPModule):
         y0 = y0 - self.hlon
         px = x-x0+self.sox
         py = y-y0+self.soy
-        self.console.set_status('PlUs', 'PlUs %d %d' % (py, px), row=5)
+        self.console.set_status('PlUs', 'PlUs %d %d' % (py, px), row=6)
         if px > self.datasx:
             px = self.datasx
         if px < 0:
@@ -157,13 +158,13 @@ class SrclocModule(mp_module.MPModule):
     def idle_task(self):
     #     '''called on idle'''
     #     # update status for detected plume strength
-        self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=5)
+        self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=6)
     #     # update icon & status for estimated location of source
         self.showIcon('sl5', self.elat, self.elon, 'bluestar.png')
-        self.console.set_status('PlEL', 'PlEL %.7f %.7f cov %.4f' % (self.elat*1e-7, self.elon*1e-7, self.cov), row=5)
+        self.console.set_status('PlEL', 'PlEL %.7f %.7f cov %.4f' % (self.elat*1e-7, self.elon*1e-7, self.cov), row=6)
     #     # update icon & status for true location of source
         self.showIcon('sl4', self.slat, self.slon, 'redstar.png')
-        self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=5)
+        self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
 
 #latitude means north
 #Latitude: -35.282001 
