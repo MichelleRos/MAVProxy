@@ -20,8 +20,8 @@ class SrclocModule(mp_module.MPModule):
         self.hlon = 1491652374
         self.sox = 926
         self.soy = 249
-        self.slat = self.hlat+600   #North-South #source location (currently just an offset from home for start point)
-        self.slon = self.hlon+200  #East-West
+        self.slat = self.hlat+200   #North-South #source location (currently just an offset from home for start point)
+        self.slon = self.hlon+100  #East-West
         self.elat = 0 #estimated source location
         self.elon = 0 
         self.upto = 0
@@ -46,7 +46,8 @@ class SrclocModule(mp_module.MPModule):
         self.datasx = 500
         self.datasy = 1000
         self.pompy = np.flipud(self.pompy.T)
-        self.maxstr = np.amax(self.pompy)
+        #self.maxstr = np.amax(self.pompy)
+        self.maxstr = 1
         print("Max strength is", self.maxstr)
 
     #[ab;bc] "is essentially 0.5 over the covariance matrix", A is the amplitude, and (x0, y0) is the center
@@ -100,8 +101,8 @@ class SrclocModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
-            #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
-            self.stre = self.pompy2d((m.lat, m.lon), self.slat, self.slon)
+            self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
+            #self.stre = self.pompy2d((m.lat, m.lon), self.slat, self.slon)
             if (self.now - self.prev) > 0.7e3:
                 #print("Running", self.now - self.prev)
                 self.xyarr[:,self.upto] = m.lat, m.lon
@@ -109,21 +110,23 @@ class SrclocModule(mp_module.MPModule):
                 self.upto = self.upto + 1
                 if self.upto > 19 & self.done10 == 0:
                     self.done10 = 1
-                    print("Starting SrcLoc")
+                    print("Starting SrcLoc Est")
                 if self.upto > (self.numsave-1):
                     self.upto = 0
                 self.prev = self.now
             self.master.mav.plume_strength_send(self.stre)
-            if self.done10 == 1 & False:
+            if self.done10 == 1:
                 i = self.strearr.argmax()
                 guess = [1, self.xyarr[0,i], self.xyarr[1,i], self.gauEPar[0],self.gauEPar[1], self.gauEPar[2]]
                 pred_params, uncert_cov = opt.curve_fit(self.gauss2d, self.xyarr, self.strearr, p0=guess)
                 self.elat = pred_params[1]
                 self.elon = pred_params[2]
                 self.cov = np.mean(abs(uncert_cov))
-                #self.master.mav.plume_est_loc_send(self.elat, self.elon, m.alt, self.cov)
-                # self.master.mav.plume_par_send(self.gauEPar[0], self.gauEPar[1], self.gauEPar[2], self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
+                #print("Sending plume loc: %.2f %.2f %.2f %.2f" % (self.elat, self.elon, m.alt, self.cov))
+                self.master.mav.plume_est_loc_send(int(self.elat), int(self.elon), int(m.alt), self.cov)
+                # self.master.mav.plume_par_send(self.gauEPar[0], self.gauEPar[1], self.gauEPar[2], self.gauTPar[0], self.gauTPar[1], self.gauTPar[2]) #removed this mavlink message
         # if m.get_type() == 'PLUME_EST_LOC':
+        #     #for use with onboard source estimation
         #     self.elat = self.hlat + m.x*111
         #     self.elon = self.hlon + m.y*111
 
@@ -171,22 +174,3 @@ class SrclocModule(mp_module.MPModule):
 def init(mpstate):
     '''initialise module'''
     return SrclocModule(mpstate)
-
-
-        # def loadcsv(self, filename):
-        # try:
-        #     import pkg_resources
-        #     name = __name__
-        #     if name == "__main__":
-        #         name = "MAVProxy.modules.mavproxy_srcloc"
-        #     stream = pkg_resources.resource_stream(name, "data/%s" % filename).read()
-        #     raw = np.fromstring(stream, dtype=np.float64)
-        # except Exception:
-        #     try:
-        #         stream = open(os.path.join(__file__, 'data', filename)).read()
-        #         raw = np.fromstring(stream, dtype=np.float64)
-        #     except Exception:
-        #         #we're in a Windows exe, where pkg_resources doesn't work
-        #         import pkgutil
-        #         raw = pkgutil.get_data( 'MAVProxy', 'modules//mavproxy_srcloc//data//' + filename)
-        # return raw
