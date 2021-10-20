@@ -11,6 +11,7 @@ from pymavlink import mavutil
 import sys, traceback
 import numpy as np
 import scipy.optimize as opt
+import math
 
 class SrclocModule(mp_module.MPModule):
     def __init__(self, mpstate):
@@ -27,6 +28,7 @@ class SrclocModule(mp_module.MPModule):
         self.upto = 0
         self.done10 = 0
         self.numsave = 200
+        self.dosl = 0
         self.xyarr = np.ones((2, self.numsave))*20e7 #for now, initialising to 20deg lat long & 0 strength - i.e. very far from the reading
         self.strearr = np.zeros(self.numsave)
         self.now = 0
@@ -42,10 +44,11 @@ class SrclocModule(mp_module.MPModule):
         self.showIcon('sl4', self.slat, self.slon, 'redstar.png') #true location of source
         self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
         self.console.set_status('PlUs', 'PlUs %d %d' % (0, 0), row=6)
-        self.pompy = np.loadtxt('/home/michelle/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
+        self.setllactive = 0
+        #self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
+        #self.pompy = np.flipud(self.pompy.T)
         self.datasx = 500
         self.datasy = 1000
-        self.pompy = np.flipud(self.pompy.T)
         #self.maxstr = np.amax(self.pompy)
         self.maxstr = 1
         print("Max strength is", self.maxstr)
@@ -90,6 +93,14 @@ class SrclocModule(mp_module.MPModule):
                             icon, layer=3, rotation=0, follow=False, 
                             trail=mp_slipmap.SlipTrail(colour=(0, 255, 255))))
 
+    def toll(self, x, y): #to lat, long
+        dlat = float(x)*89.83204953368922
+        scl = max(math.cos((self.hlat+dlat/2)* (1.0e-7 * (3.141592653589793/180.0))), 0.01)
+        dlon = (float(y) * 89.83204953368922) / scl
+        lat = self.hlat + dlat
+        lon = self.hlon + dlon
+        return lat, lon
+
     def mavlink_packet(self, m):
         'handle a MAVLink packet'''
         if m.get_type() == 'GPS_GLOBAL_ORIGIN':
@@ -115,7 +126,7 @@ class SrclocModule(mp_module.MPModule):
                     self.upto = 0
                 self.prev = self.now
             self.master.mav.plume_strength_send(self.stre)
-            if self.done10 == 1:
+            if self.done10 == 1 & self.dosl == 1: #This only runs if target loc hasn't been sent
                 i = self.strearr.argmax()
                 guess = [1, self.xyarr[0,i], self.xyarr[1,i], self.gauEPar[0],self.gauEPar[1], self.gauEPar[2]]
                 pred_params, uncert_cov = opt.curve_fit(self.gauss2d, self.xyarr, self.strearr, p0=guess)
@@ -136,10 +147,7 @@ class SrclocModule(mp_module.MPModule):
              print("Usage: set x y | tpar a b c | epar a b c | ppar")
         else:
             if args[0] == 'set':
-                lato = int(float(args[1])*89.83204953368922)
-                lono = int(float(args[2])*89.83204953368922)
-                self.slat = self.hlat + lato
-                self.slon = self.hlon + lono
+                self.slat, self.slon = self.toll(args[1],args[2])
                 self.xyarr = np.ones((2, self.numsave))*20e7
                 self.strearr = np.zeros(self.numsave)
                 self.upto = 0
@@ -157,17 +165,49 @@ class SrclocModule(mp_module.MPModule):
             if args[0] == 'ppar':
                 print('Source estimated params are %.2f %.2f %0.2f' % tuple(self.gauEPar))
                 print('Source true params are %.2f %.2f %0.2f' %  tuple(self.gauTPar))
+            if args[0] == 'setp':
+                tlat, tlon = self.toll(args[1],args[2])
+                self.dosl = 0
+                print("Sending target loc: %.2f %.2f" % (tlat, tlon))
+                self.master.mav.plume_est_loc_send(int(tlat), int(tlon), 700, 0.999)
+                self.showIcon('sl5', tlat, tlon, 'bluestar.png')
+            if args[0] == 'flyto': #flies to clicked location
+                if args[1] == 'on':
+                    self.setllactive = 1
+                    self.dosl = 0
+                if args[1] == 'off':
+                    self.setllactive = 0
+            if args[0] == 'dosrcloc': #fly to estimated position
+                if args[1] == 'on':
+                    self.setllactive = 0
+                    self.dosl = 1
+                if args[1] == 'off':
+                    self.dosl = 0
     
     def idle_task(self):
     #     '''called on idle'''
     #     # update status for detected plume strength
         self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=6)
     #     # update icon & status for estimated location of source
-        self.showIcon('sl5', self.elat, self.elon, 'bluestar.png')
-        self.console.set_status('PlEL', 'PlEL %.7f %.7f cov %.4f' % (self.elat*1e-7, self.elon*1e-7, self.cov), row=6)
-    #     # update icon & status for true location of source
-        self.showIcon('sl4', self.slat, self.slon, 'redstar.png')
-        self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
+        if self.dosl == 1:
+            self.showIcon('sl5', self.elat, self.elon, 'bluestar.png')
+            self.console.set_status('PlEL', 'PlEL %.7f %.7f cov %.4f' % (self.elat*1e-7, self.elon*1e-7, self.cov), row=6)
+        #     # update icon & status for true location of source
+            self.showIcon('sl4', self.slat, self.slon, 'redstar.png')
+            self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
+        else:
+            self.console.set_status('PlEL', '', row=6)
+            self.showIcon('sl4', 0, 0, 'redstar.png')
+            self.console.set_status('PlTL', '', row=6)
+        if self.setllactive == 1:
+            latlon = self.mpstate.click_location
+            tlat = latlon[0]*1.0e7
+            tlon = latlon[1]*1.0e7
+            # tlat = float(args[1])*10000000
+            # tlon = float(args[2])*10000000
+            #print("Sending target loc: %.1f %.1f" % (tlat, tlon))
+            self.master.mav.plume_est_loc_send(int(tlat), int(tlon), 700, 0.999)
+            self.showIcon('sl5', tlat, tlon, 'bluestar.png')
 
 #latitude means north
 #Latitude: -35.282001 
