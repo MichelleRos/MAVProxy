@@ -144,7 +144,7 @@ class SrclocModule(mp_module.MPModule):
     def cmd_sl(self, args):
         '''handle Source Location setting'''
         if len(args) == 0:
-             print("Usage: set x y | tpar a b c | epar a b c | ppar")
+             print("Usage: set x y | tpar a b c | epar a b c | ppar | setp lat lon | flyto on/off | dosrcloc on/off")
         else:
             if args[0] == 'set':
                 self.slat, self.slon = self.toll(args[1],args[2])
@@ -177,7 +177,7 @@ class SrclocModule(mp_module.MPModule):
                     self.dosl = 0
                 if args[1] == 'off':
                     self.setllactive = 0
-            if args[0] == 'dosrcloc': #fly to estimated position
+            if args[0] == 'dosrcloc': #fly to estimated source position
                 if args[1] == 'on':
                     self.setllactive = 0
                     self.dosl = 1
