@@ -38,19 +38,19 @@ class SrclocModule(mp_module.MPModule):
         self.cov = 0
         self.stre = 0
         self.add_command('sl', self.cmd_sl, "Set source location", ['sl x y'])#['<%s|all>' % x])
-        # self.console.set_status('SRLoc', 'SRLoc %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
-        # self.console.set_status('SELoc', 'SELoc --- ---', row=6)
-        self.console.set_status('PlSt', 'Plume Strength ---', row=6)
-        self.showIcon('sl4', self.slat, self.slon, 'redstar.png') #true location of source
-        self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
-        self.console.set_status('PlUs', 'PlUs %d %d' % (0, 0), row=6)
+        self.console.set_status('PlSt', '', row=6)
+        self.showIcon('sl5', 0, 0, 'bluestar.png')
+        self.console.set_status('PlEL', '', row=6)
+        self.showIcon('sl4', 0, 0, 'redstar.png')
+        self.console.set_status('PlTL', '', row=6)
+        self.console.set_status('PlUs', '', row=6)
         self.setllactive = 0
-        #self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
-        #self.pompy = np.flipud(self.pompy.T)
+        self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
+        self.pompy = np.flipud(self.pompy.T)
         self.datasx = 500
         self.datasy = 1000
-        #self.maxstr = np.amax(self.pompy)
-        self.maxstr = 1
+        self.maxstr = np.amax(self.pompy)
+        #self.maxstr = 1
         print("Max strength is", self.maxstr)
 
     #[ab;bc] "is essentially 0.5 over the covariance matrix", A is the amplitude, and (x0, y0) is the center
@@ -112,8 +112,10 @@ class SrclocModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
-            self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
-            #self.stre = self.pompy2d((m.lat, m.lon), self.slat, self.slon)
+            #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
+            self.stre = self.pompy2d((m.lat, m.lon), self.slat, self.slon)
+            self.master.mav.plume_strength_send(self.stre)
+
             if (self.now - self.prev) > 0.7e3:
                 #print("Running", self.now - self.prev)
                 self.xyarr[:,self.upto] = m.lat, m.lon
@@ -121,11 +123,10 @@ class SrclocModule(mp_module.MPModule):
                 self.upto = self.upto + 1
                 if self.upto > 19 & self.done10 == 0:
                     self.done10 = 1
-                    print("Starting SrcLoc Est")
+                    print("Ready for SrcLoc Est")
                 if self.upto > (self.numsave-1):
                     self.upto = 0
                 self.prev = self.now
-            self.master.mav.plume_strength_send(self.stre)
             if self.done10 == 1 & self.dosl == 1: #This only runs if target loc hasn't been sent
                 i = self.strearr.argmax()
                 guess = [1, self.xyarr[0,i], self.xyarr[1,i], self.gauEPar[0],self.gauEPar[1], self.gauEPar[2]]
@@ -136,10 +137,11 @@ class SrclocModule(mp_module.MPModule):
                 #print("Sending plume loc: %.2f %.2f %.2f %.2f" % (self.elat, self.elon, m.alt, self.cov))
                 self.master.mav.plume_est_loc_send(int(self.elat), int(self.elon), int(m.alt), self.cov)
                 # self.master.mav.plume_par_send(self.gauEPar[0], self.gauEPar[1], self.gauEPar[2], self.gauTPar[0], self.gauTPar[1], self.gauTPar[2]) #removed this mavlink message
-        # if m.get_type() == 'PLUME_EST_LOC':
-        #     #for use with onboard source estimation
-        #     self.elat = self.hlat + m.x*111
-        #     self.elon = self.hlon + m.y*111
+        if m.get_type() == 'PLUME_EST_LOC':
+            #for use with onboard source estimation
+            self.elat, self.elon = self.toll(m.x,m.y)
+            self.showIcon('sl5', self.elat, self.elon, 'bluestar.png')
+            self.console.set_status('PlEL', 'PlEL %.7f %.7f cov %.4f' % (self.elat*1e-7, self.elon*1e-7, self.cov), row=6)
 
     def cmd_sl(self, args):
         '''handle Source Location setting'''
@@ -183,11 +185,15 @@ class SrclocModule(mp_module.MPModule):
                     self.dosl = 1
                 if args[1] == 'off':
                     self.dosl = 0
+                    self.showIcon('sl5', 0, 0, 'bluestar.png')
+                    self.console.set_status('PlEL', '', row=6)
+                    self.showIcon('sl4', 0, 0, 'redstar.png')
+                    self.console.set_status('PlTL', '', row=6)
     
     def idle_task(self):
     #     '''called on idle'''
     #     # update status for detected plume strength
-        self.console.set_status('PlSt', 'Plume Strength %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=6)
+        self.console.set_status('PlSt', 'PS %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=6)
     #     # update icon & status for estimated location of source
         if self.dosl == 1:
             self.showIcon('sl5', self.elat, self.elon, 'bluestar.png')
@@ -195,10 +201,6 @@ class SrclocModule(mp_module.MPModule):
         #     # update icon & status for true location of source
             self.showIcon('sl4', self.slat, self.slon, 'redstar.png')
             self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
-        else:
-            self.console.set_status('PlEL', '', row=6)
-            self.showIcon('sl4', 0, 0, 'redstar.png')
-            self.console.set_status('PlTL', '', row=6)
         if self.setllactive == 1:
             latlon = self.mpstate.click_location
             tlat = latlon[0]*1.0e7
@@ -206,7 +208,7 @@ class SrclocModule(mp_module.MPModule):
             # tlat = float(args[1])*10000000
             # tlon = float(args[2])*10000000
             #print("Sending target loc: %.1f %.1f" % (tlat, tlon))
-            self.master.mav.plume_est_loc_send(int(tlat), int(tlon), 700, 0.999)
+            self.master.mav.plume_est_loc_send(int(tlat), int(tlon), 700, 0.999) #actually just sending the target location
             self.showIcon('sl5', tlat, tlon, 'bluestar.png')
 
 #latitude means north
