@@ -19,9 +19,7 @@ class SrclocModule(mp_module.MPModule):
         '''initialisation code'''
         self.hlat = -353632621   #home location, in (approx) centimetres
         self.hlon = 1491652374
-        self.sox = 926
-        self.soy = 249
-        self.slat = self.hlat+200   #North-South #source location (currently just an offset from home for start point)
+        self.slat = self.hlat+200   #(only used for Gaussian) North-South #source location (currently just an offset from home for start point)
         self.slon = self.hlon+100  #East-West
         self.elat = 0 #estimated source location
         self.elon = 0 
@@ -47,8 +45,9 @@ class SrclocModule(mp_module.MPModule):
         self.setllactive = 0
         self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
         self.pompy = np.flipud(self.pompy.T)
-        self.datasx = 500
-        self.datasy = 1000
+        self.datasx = 1000
+        self.datasy = 500
+        self.mult = 1
         self.maxstr = np.amax(self.pompy)
         #self.maxstr = 1
         print("Max strength is", self.maxstr)
@@ -65,24 +64,24 @@ class SrclocModule(mp_module.MPModule):
         inner += c * (y - y0)**2
         return amp * np.exp(-inner)
 
-    def pompy2d(self, xy, x0, y0):
-        #x0,y0 are slat & slon passed in
+    def pompy2d(self, xy):
         x, y = xy
-        x = x - self.hlat #work in approx cm per pixel
+        x = x - self.hlat #work in approx cm per pixel, from home point
         y = y - self.hlon
-        x0 = x0 - self.hlat
-        y0 = y0 - self.hlon
-        px = x-x0+self.sox
-        py = y-y0+self.soy
-        self.console.set_status('PlUs', 'PlUs %d %d' % (py, px), row=6)
-        if px > self.datasx:
-            px = self.datasx
+        x = round(x/self.mult)
+        y = round(y/self.mult)
+        px = x + 100
+        py = y + 250
+        self.console.set_status('PlUs', 'PlUs %d %d' % (px, py), row=6)
+        if px > self.datasx-1:
+            px = self.datasx-1
         if px < 0:
             px = 0
-        if py > self.datasy:
-            py = self.datasy
+        if py > self.datasy-1:
+            py = self.datasy-1
         if py < 0:
             py = 0
+        self.console.set_status('Deb', 'Deb x%.0f y%.0f s-px%.0f s-py %.0f' % (x,y,px,py), row=6)
         return self.pompy[px,py]
     
     def showIcon(self, id, lat, lon, img):
@@ -113,7 +112,7 @@ class SrclocModule(mp_module.MPModule):
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
             #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
-            self.stre = self.pompy2d((m.lat, m.lon), self.slat, self.slon)
+            self.stre = self.pompy2d((m.lat, m.lon))
             self.master.mav.plume_strength_send(self.stre)
 
             if (self.now - self.prev) > 0.7e3:
@@ -179,6 +178,8 @@ class SrclocModule(mp_module.MPModule):
                     self.dosl = 0
                 if args[1] == 'off':
                     self.setllactive = 0
+            if args[0] == 'setmult':
+                    self.mult = float(args[1])
             if args[0] == 'dosrcloc': #fly to estimated source position
                 if args[1] == 'on':
                     self.setllactive = 0
