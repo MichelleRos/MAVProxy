@@ -237,7 +237,7 @@ class ConsoleModule(mp_module.MPModule):
                         name = 'SysID %u[%u]: ?' % (s,c)
                     self.vehicle_menu.items.append(MPMenuItem(name, name, '# vehicle %u:%u' % (s,c)))
         self.mpstate.console.set_menu(self.menu, self.menu_callback)
-    
+
     def add_new_vehicle(self, hb):
         '''add a new vehicle'''
         if hb.type == mavutil.mavlink.MAV_TYPE_GCS:
@@ -257,7 +257,7 @@ class ConsoleModule(mp_module.MPModule):
             self.last_sys_status_errors_announce = now
             self.say("Critical failure 0x%x sysid=%u" % (errors, msg.get_srcSystem()))
 
-        
+
     def mavlink_packet(self, msg):
         '''handle an incoming mavlink packet'''
         if not isinstance(self.console, wxconsole.MessageConsole):
@@ -364,7 +364,7 @@ class ConsoleModule(mp_module.MPModule):
             self.console.set_status('Alt', 'Alt %s' % self.height_string(rel_alt))
             self.console.set_status('AirSpeed', 'AirSpeed %s' % self.speed_string(msg.airspeed))
             self.console.set_status('GPSSpeed', 'GPSSpeed %s' % self.speed_string(msg.groundspeed))
-            self.console.set_status('Thr', 'Thr %u' % msg.throttle)
+            self.console.set_status('Thr', 'Thr %3u' % msg.throttle)
             t = time.localtime(msg._timestamp)
             flying = False
             if self.mpstate.vehicle_type == 'copter':
@@ -382,8 +382,14 @@ class ConsoleModule(mp_module.MPModule):
                 self.total_time = time.mktime(t) - self.start_time
                 self.console.set_status('FlightTime', 'FlightTime %u:%02u' % (int(self.total_time)/60, int(self.total_time)%60))
         elif type == 'ATTITUDE':
-            self.console.set_status('Roll', 'Roll %u' % math.degrees(msg.roll))
-            self.console.set_status('Pitch', 'Pitch %u' % math.degrees(msg.pitch))
+            if msg.roll < 0: #msg is in -pi to pi rad
+                self.console.set_status('Roll', 'Roll %0.2f' % math.degrees(msg.roll))
+            else:
+                self.console.set_status('Roll', 'Roll  %0.2f' % math.degrees(msg.roll))
+            if msg.roll < 0:
+                self.console.set_status('Pitch', 'Pitch %0.2f' % math.degrees(msg.pitch))
+            else:
+                self.console.set_status('Pitch', 'Pitch  %0.2f' % math.degrees(msg.pitch))
         elif type in ['SYS_STATUS']:
             sensors = { 'AS'   : mavutil.mavlink.MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE,
                         'MAG'  : mavutil.mavlink.MAV_SYS_STATUS_SENSOR_3D_MAG,
@@ -442,7 +448,7 @@ class ConsoleModule(mp_module.MPModule):
             if ((msg.onboard_control_sensors_enabled & mavutil.mavlink.MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS) == 0):
                 self.safety_on = True
             else:
-                self.safety_on = False                
+                self.safety_on = False
 
         elif type == 'WIND':
             self.console.set_status('Wind', 'Wind %u/%s' % (msg.direction, self.speed_string(msg.speed)))
@@ -604,8 +610,8 @@ class ConsoleModule(mp_module.MPModule):
         elif type == 'PARAM_VALUE':
             rec, tot = self.module('param').param_status()
             self.console.set_status('Params', 'Param %u/%u' % (rec,tot))
-            
-        if type == 'HIGH_LATENCY2':
+
+        elif type == 'HIGH_LATENCY2':
             self.console.set_status('WPDist', 'Distance %s' % self.dist_string(msg.target_distance * 10))
             # The -180 here for for consistency with NAV_CONTROLLER_OUTPUT (-180->180), whereas HIGH_LATENCY2 is (0->360)
             self.console.set_status('WPBearing', 'Bearing %u' % ((msg.target_heading * 2) - 180))
@@ -622,7 +628,7 @@ class ConsoleModule(mp_module.MPModule):
             self.console.set_status('Thr', 'Thr %u' % msg.throttle)
             self.console.set_status('Heading', 'Hdg %s/---' % (msg.heading * 2))
             self.console.set_status('WP', 'WP %u/--' % (msg.wp_num))
-            
+
             #re-map sensors
             sensors = { 'AS'   : mavutil.mavlink.HL_FAILURE_FLAG_DIFFERENTIAL_PRESSURE,
                         'MAG'  : mavutil.mavlink.HL_FAILURE_FLAG_3D_MAG,
@@ -639,7 +645,7 @@ class ConsoleModule(mp_module.MPModule):
                 else:
                     fg = 'green'
                 self.console.set_status(s, s, fg=fg)
-                
+
             # do the remaining non-standard system mappings
             fence_failed = ((msg.failure_flags & mavutil.mavlink.HL_FAILURE_FLAG_GEOFENCE) == mavutil.mavlink.HL_FAILURE_FLAG_GEOFENCE)
             if fence_failed:
@@ -656,8 +662,8 @@ class ConsoleModule(mp_module.MPModule):
             if batt_failed:
                 self.console.set_status('PWR', 'PWR FAILED', fg='red')
             else:
-                self.console.set_status('PWR', 'PWR OK', fg='green')            
-                                                                        
+                self.console.set_status('PWR', 'PWR OK', fg='green')
+
         for id in self.user_added.keys():
             if type in self.user_added[id].msg_types:
                 d = self.user_added[id]
