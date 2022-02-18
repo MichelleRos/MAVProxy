@@ -22,7 +22,7 @@ class SrclocModule(mp_module.MPModule):
         self.slat = self.hlat+200   #(only used for Gaussian) North-South #source location (currently just an offset from home for start point)
         self.slon = self.hlon+100  #East-West
         self.elat = 0 #estimated source location
-        self.elon = 0 
+        self.elon = 0
         self.upto = 0
         self.done10 = 0
         self.numsave = 200
@@ -42,7 +42,6 @@ class SrclocModule(mp_module.MPModule):
         self.showIcon('sl4', 0, 0, 'redstar.png')
         self.console.set_status('PlTL', '', row=6)
         self.console.set_status('PlUs', '', row=6)
-        self.setllactive = 0
         self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
         self.pompy = np.flipud(self.pompy.T)
         self.datasx = 1000
@@ -83,13 +82,13 @@ class SrclocModule(mp_module.MPModule):
             py = 0
         self.console.set_status('Deb', 'Deb x%.0f y%.0f s-px%.0f s-py %.0f' % (x,y,px,py), row=6)
         return self.pompy[px,py]
-    
+
     def showIcon(self, id, lat, lon, img):
         for mp in self.module_matching('map*'):
             icon = mp.map.icon(img)
             #print("Icon at: %.1f %.1f" % (m.lat, m.lon))
             mp.map.add_object(mp_slipmap.SlipIcon(id, (lat * 1e-7, lon * 1e-7),
-                            icon, layer=3, rotation=0, follow=False, 
+                            icon, layer=3, rotation=0, follow=False,
                             trail=mp_slipmap.SlipTrail(colour=(0, 255, 255))))
 
     def toll(self, x, y): #to lat, long
@@ -172,17 +171,10 @@ class SrclocModule(mp_module.MPModule):
                 print("Sending target loc: %.2f %.2f" % (tlat, tlon))
                 self.master.mav.plume_est_loc_send(int(tlat), int(tlon), 700, 0.999)
                 self.showIcon('sl5', tlat, tlon, 'bluestar.png')
-            if args[0] == 'flyto': #flies to clicked location
-                if args[1] == 'on':
-                    self.setllactive = 1
-                    self.dosl = 0
-                if args[1] == 'off':
-                    self.setllactive = 0
             if args[0] == 'setmult':
                     self.mult = float(args[1])
             if args[0] == 'dosrcloc': #fly to estimated source position
                 if args[1] == 'on':
-                    self.setllactive = 0
                     self.dosl = 1
                 if args[1] == 'off':
                     self.dosl = 0
@@ -190,7 +182,7 @@ class SrclocModule(mp_module.MPModule):
                     self.console.set_status('PlEL', '', row=6)
                     self.showIcon('sl4', 0, 0, 'redstar.png')
                     self.console.set_status('PlTL', '', row=6)
-    
+
     def idle_task(self):
     #     '''called on idle'''
     #     # update status for detected plume strength
@@ -202,18 +194,9 @@ class SrclocModule(mp_module.MPModule):
         #     # update icon & status for true location of source
             self.showIcon('sl4', self.slat, self.slon, 'redstar.png')
             self.console.set_status('PlTL', 'PlTL %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7), row=6)
-        if self.setllactive == 1:
-            latlon = self.mpstate.click_location
-            tlat = latlon[0]*1.0e7
-            tlon = latlon[1]*1.0e7
-            # tlat = float(args[1])*10000000
-            # tlon = float(args[2])*10000000
-            #print("Sending target loc: %.1f %.1f" % (tlat, tlon))
-            self.master.mav.plume_est_loc_send(int(tlat), int(tlon), 700, 0.999) #actually just sending the target location
-            self.showIcon('sl5', tlat, tlon, 'bluestar.png')
 
 #latitude means north
-#Latitude: -35.282001 
+#Latitude: -35.282001
 def init(mpstate):
     '''initialise module'''
     return SrclocModule(mpstate)
