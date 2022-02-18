@@ -17,10 +17,15 @@ class MirModule(mp_module.MPModule):
     def __init__(self, mpstate):
         super(MirModule, self).__init__(mpstate, "mir", "mir module")
         '''initialisation code'''
+        self.add_command('flyto', self.cmd_flyto, "Toggle fly to clicked location", ['flyto'])
         self.hlat = -353632621   #home location, in (approx) centimetres
         self.hlon = 1491652374
+        self.tlat = 0
+        self.tlon = 0
         self.TarX = 0
         self.TarY = 0
+        self.flyto = 0
+        self.alt = 600 #current altitude
 
     def showIcon(self, id, lat, lon, img):
         for mp in self.module_matching('map*'):
@@ -46,6 +51,8 @@ class MirModule(mp_module.MPModule):
             self.hlat = m.latitude
             self.hlon = m.longitude
             print("Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
+        if m.get_type() == 'GLOBAL_POSITION_INT':
+            self.alt = m.alt
         if m.get_type() == 'NAMED_VALUE_FLOAT':
             if m.name == 'BSCxz':
                 self.console.set_status('BSCxz', 'BSCxz %.3f' % m.value, row=7)
@@ -60,14 +67,31 @@ class MirModule(mp_module.MPModule):
             elif m.name ==  'TarY':
                 self.TarY = m.value
 
-
-
+    def cmd_flyto(self, args):
+        if self.flyto == 1:
+            self.flyto == 0
+            print("Flyto off")
+        else:
+            self.flyto = 1
+            print("Flyto on")
 
     def idle_task(self):
-    #     '''called on idle'''
-            tlat, tlon = self.toll(self.TarX,self.TarY)
-            self.showIcon('tar', tlat, tlon, 'redstar.png')
-            self.console.set_status('tar', 'Tar X %.2f, Tar Y %.2f' % (self.TarX, self.TarY), row=7)
+#     '''called on idle'''
+        tlat, tlon = self.toll(self.TarX,self.TarY)
+        self.showIcon('tar', tlat, tlon, 'redstar.png')
+        self.console.set_status('tar', 'Tar X %.2f, Tar Y %.2f' % (self.TarX, self.TarY), row=7)
+
+        if self.flyto == 1:
+            latlon = self.mpstate.click_location
+            if latlon is not None:
+                tlat = int(latlon[0]*1.0e7)
+                tlon = int(latlon[1]*1.0e7)
+                if tlat != self.tlat or tlon != self.tlon:
+                    self.tlat = tlat
+                    self.tlon = tlon
+                    # print("Sending target loc: %d %d %d %d" % (self.tlat, self.tlon, tlat, tlon))
+                    self.master.mav.plume_est_loc_send(self.tlat, self.tlon, self.alt, 0.999) #actually just sending the target location
+                    self.showIcon('sl5', self.tlat, self.tlon, 'bluestar.png')
 
 def init(mpstate):
     '''initialise module'''
