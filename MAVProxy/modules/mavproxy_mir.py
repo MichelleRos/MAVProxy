@@ -54,7 +54,15 @@ class MirModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             self.alt = m.alt
         if m.get_type() == 'NAMED_VALUE_FLOAT':
-            if m.name == 'BSCxz':
+            if m.name == 'FINIr':
+                self.console.set_status('FINIr', 'FINIr %.3f' % m.value, row=7)
+            elif m.name == 'FINIf':
+                self.console.set_status('FINIf', 'FINIf %.3f' % m.value, row=7)
+            elif m.name == 'FINId':
+                self.console.set_status('FINId', 'FINId %.3f' % m.value, row=7)
+            elif m.name == 'FINIy':
+                self.console.set_status('FINIy', 'FINIy %.3f' % m.value, row=7)
+            elif m.name == 'BSCxz':
                 self.console.set_status('BSCxz', 'BSCxz %.3f' % m.value, row=7)
             elif m.name == 'BSCyyaw':
                 self.console.set_status('BSCyyaw', 'BSCyyaw %.3f' % m.value, row=7)
