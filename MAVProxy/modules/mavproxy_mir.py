@@ -12,6 +12,7 @@ import sys, traceback
 import numpy as np
 import scipy.optimize as opt
 import math
+import re
 
 class MirModule(mp_module.MPModule):
     def __init__(self, mpstate):
@@ -47,33 +48,30 @@ class MirModule(mp_module.MPModule):
         'handle a MAVLink packet'''
         if m.get_type() == 'GPS_GLOBAL_ORIGIN':
             # message is sent when origin is initially set and when arming, apparently. Unfortunately no apparent way of triggering it.
-            # this means that currently the module must be started before the EKF sets its origin if the vehicle is started anywhere other than CMAC.
             self.hlat = m.latitude
             self.hlon = m.longitude
             print("Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
         if m.get_type() == 'GLOBAL_POSITION_INT':
             self.alt = m.alt
         if m.get_type() == 'NAMED_VALUE_FLOAT':
-            if m.name == 'FINIr':
-                self.console.set_status('FINIr', 'FINIr %.3f' % m.value, row=7)
-            elif m.name == 'FINIf':
-                self.console.set_status('FINIf', 'FINIf %.3f' % m.value, row=7)
-            elif m.name == 'FINId':
-                self.console.set_status('FINId', 'FINId %.3f' % m.value, row=7)
-            elif m.name == 'FINIy':
-                self.console.set_status('FINIy', 'FINIy %.3f' % m.value, row=7)
-            elif m.name == 'BSCxz':
-                self.console.set_status('BSCxz', 'BSCxz %.3f' % m.value, row=7)
-            elif m.name == 'BSCyyaw':
-                self.console.set_status('BSCyyaw', 'BSCyyaw %.3f' % m.value, row=7)
-            if m.name == 'BSCxz_n':
-                self.console.set_status('BSCxz_n', 'BSCxz_n %.3f' % m.value, row=7)
-            elif m.name == 'BSCyyaw_n':
-                self.console.set_status('BSCyyaw_n', 'BSCyyaw_n %.3f' % m.value, row=7)
+            if re.match(r'^FINI', m.name):
+                self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=8)
+            elif re.match(r'^BSC', m.name):
+                 self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=7)
             elif m.name ==  'TarX':
                 self.TarX = m.value
             elif m.name ==  'TarY':
                 self.TarY = m.value
+            elif re.match(r'^ADRC', m.name):
+                na0 = ' %.2f' % m.value
+                na1 = na0.rjust(10)
+                na = m.name + na1
+                if re.match(r"^ADRC...1", m.name):
+                    self.console.set_status(m.name, na, row=9)
+                elif re.match(r"^ADRC...2", m.name):
+                    self.console.set_status(m.name, na, row=10)
+                else:
+                    self.console.set_status(m.name, na, row=11)
 
     def cmd_flyto(self, args):
         if self.flyto == 1:
