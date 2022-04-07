@@ -42,13 +42,16 @@ class SrclocModule(mp_module.MPModule):
         self.showIcon('sl4', 0, 0, 'redstar.png')
         self.console.set_status('PlTL', '', row=6)
         self.console.set_status('PlUs', '', row=6)
-        self.pompy = np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32")
-        self.pompy = np.flipud(self.pompy.T)
+        self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32").T)
+        # self.pompyx = an_array[:, 1]
+        # self.pompyy = an_array[:, 2]
+        # self.pompyz = an_array[:, 3]
         self.datasx = 1000
         self.datasy = 500
-        self.mult = 1
         self.maxstr = np.amax(self.pompy)
         #self.maxstr = 1
+        self.LLMINV = 89.83204953368922 #lat lon to m inv
+        self.DEGTORAD = 3.141592653589793 / 180.0
         print("Max strength is", self.maxstr)
 
     #[ab;bc] "is essentially 0.5 over the covariance matrix", A is the amplitude, and (x0, y0) is the center
@@ -63,14 +66,10 @@ class SrclocModule(mp_module.MPModule):
         inner += c * (y - y0)**2
         return amp * np.exp(-inner)
 
-    def pompy2d(self, xy):
-        x, y = xy
-        x = x - self.hlat #work in approx cm per pixel, from home point
-        y = y - self.hlon
-        x = round(x/self.mult)
-        y = round(y/self.mult)
-        px = x + 100
-        py = y + 250
+    def pompy2d(self, lat, lon):
+        x, y = self.tom(lat, lon)
+        px = x*100 + 100 #work in cm per "pixel"
+        py = y*100 + 250
         self.console.set_status('PlUs', 'PlUs %d %d' % (px, py), row=6)
         if px > self.datasx-1:
             px = self.datasx-1
@@ -81,7 +80,7 @@ class SrclocModule(mp_module.MPModule):
         if py < 0:
             py = 0
         self.console.set_status('Deb', 'Deb x%.0f y%.0f s-px%.0f s-py %.0f' % (x,y,px,py), row=6)
-        return self.pompy[px,py]
+        return self.pompy[int(px),int(py)]
 
     def showIcon(self, id, lat, lon, img):
         for mp in self.module_matching('map*'):
@@ -92,12 +91,21 @@ class SrclocModule(mp_module.MPModule):
                             trail=mp_slipmap.SlipTrail(colour=(0, 255, 255))))
 
     def toll(self, x, y): #to lat, long
-        dlat = float(x)*89.83204953368922
-        scl = max(math.cos((self.hlat+dlat/2)* (1.0e-7 * (3.141592653589793/180.0))), 0.01)
-        dlon = (float(y) * 89.83204953368922) / scl
+        dlat = float(x)*self.LLMINV
+        scl = self.lonscl((lon-self.hlon)/2)
+        dlon = (float(y) * self.LLMINV) / scl
         lat = self.hlat + dlat
-        lon = self.hlon + dlon
+        lon = self.hlon + dlonf
         return lat, lon
+
+    def lonscl(self, lat):
+        scale = math.cos(lat * (1.0e-7 * self.DEGTORAD))
+        return max(scale, 0.01)
+
+    def tom(self, lat, lon): # to metres
+        x = (lat-self.hlat) * (1/self.LLMINV)
+        y = (lon-self.hlon) * (1/self.LLMINV) * self.lonscl((lon-self.hlon)/2)
+        return x, y
 
     def mavlink_packet(self, m):
         'handle a MAVLink packet'''
@@ -111,8 +119,8 @@ class SrclocModule(mp_module.MPModule):
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
             #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
-            self.stre = self.pompy2d((m.lat, m.lon))
-            self.master.mav.plume_strength_send(self.stre)
+            self.stre = self.pompy2d(m.lat, m.lon)
+            self.master.mav.plume_strength_send(self.stre/self.maxstr)
 
             if (self.now - self.prev) > 0.7e3:
                 #print("Running", self.now - self.prev)
