@@ -54,7 +54,9 @@ class MirModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             self.alt = m.alt
         if m.get_type() == 'NAMED_VALUE_FLOAT':
-            if re.match(r'^FINI', m.name):
+            if m.name == "PLU_STR":
+                self.console.set_status(m.name, m.name + ' %0.4f' % m.value, row=8)
+            elif re.match(r'^FINI', m.name):
                 self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=8)
             elif re.match(r'^BSC', m.name):
                  self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=7)
