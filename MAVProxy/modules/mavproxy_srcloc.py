@@ -42,12 +42,21 @@ class SrclocModule(mp_module.MPModule):
         self.showIcon('sl4', 0, 0, 'redstar.png')
         self.console.set_status('PlTL', '', row=6)
         self.console.set_status('PlUs', '', row=6)
+        #original one - nice smooth straight plume
         self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32").T)
+        self.datasx = 1000
+        self.datasy = 500
+        self.offx = 100
+        self.offy = 250
+        #new, bigger one, has that weird swirly bit too...
+        # self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo_log/leng60_dt0.01_spdup5_wx2_wy0_px5_py0_sprd30_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx2000_six1000_scx2000_proc.csv', delimiter=',', dtype="float32").T)
+        # self.datasx = 2000
+        # self.datasy = 1000
+        # self.offx = 200
+        # self.offy = 500
         # self.pompyx = an_array[:, 1]
         # self.pompyy = an_array[:, 2]
         # self.pompyz = an_array[:, 3]
-        self.datasx = 1000
-        self.datasy = 500
         self.maxstr = np.amax(self.pompy)
         #self.maxstr = 1
         self.LLMINV = 89.83204953368922 #lat lon to m inv
@@ -68,8 +77,8 @@ class SrclocModule(mp_module.MPModule):
 
     def pompy2d(self, lat, lon):
         x, y = self.tom(lat, lon)
-        px = x*100 + 100 #work in cm per "pixel"
-        py = y*100 + 250
+        px = x*100 + self.offx #work in cm per "pixel"
+        py = y*100 + self.offy
         self.console.set_status('PlUs', 'PlUs %d %d' % (px, py), row=6)
         if px > self.datasx-1:
             px = self.datasx-1
