@@ -101,10 +101,12 @@ class SrclocModule(mp_module.MPModule):
 
     def toll(self, x, y): #to lat, long
         dlat = float(x)*self.LLMINV
-        scl = self.lonscl((lon-self.hlon)/2)
+        scl = self.lonscl(self.hlat) #just using hlat as it's complex to do avg of both. No issue for small distances
         dlon = (float(y) * self.LLMINV) / scl
         lat = self.hlat + dlat
-        lon = self.hlon + dlonf
+        lon = self.hlon + dlon
+        x2, y2 = self.tom(lat,lon)
+        #print("back to m "+str(x2)+" "+str(y2)) #for testing accuracy
         return lat, lon
 
     def lonscl(self, lat):
@@ -113,7 +115,7 @@ class SrclocModule(mp_module.MPModule):
 
     def tom(self, lat, lon): # to metres
         x = (lat-self.hlat) * (1/self.LLMINV)
-        y = (lon-self.hlon) * (1/self.LLMINV) * self.lonscl((lon-self.hlon)/2)
+        y = (lon-self.hlon) * (1/self.LLMINV) * self.lonscl((lat+self.hlat)/2)
         return x, y
 
     def mavlink_packet(self, m):
