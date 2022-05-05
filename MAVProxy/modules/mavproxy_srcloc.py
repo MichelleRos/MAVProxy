@@ -36,45 +36,25 @@ class SrclocModule(mp_module.MPModule):
         self.cov = 0
         self.stre = 0
         self.add_command('sl', self.cmd_sl, "Set source location", ['sl x y'])#['<%s|all>' % x])
+        self.add_command('slp', self.cmd_load_pompy, "Load pompy data by number", ['slp no'])#['<%s|all>' % x])
         self.console.set_status('PlSt', '', row=6)
         self.showIcon('sl5', 0, 0, 'bluestar.png')
         self.console.set_status('PlEL', '', row=6)
         self.showIcon('sl4', 0, 0, 'redstar.png')
         self.console.set_status('PlTL', '', row=6)
         self.console.set_status('PlUs', '', row=6)
-        #original one - nice smooth straight plume
-        # self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32").T)
-        # self.datasx = 1000
-        # self.datasy = 500
-        # self.offx = 100
-        # self.offy = 250
-        #new, bigger one, has that weird swirly bit too...
-        # self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo_log/leng60_dt0.01_spdup5_wx2_wy0_px5_py0_sprd30_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx2000_six1000_scx2000_proc.csv', delimiter=',', dtype="float32").T)
-        # self.datasx = 2000
-        # self.datasy = 1000
-        # self.offx = 200
-        # self.offy = 500
-        #ori but 1000x1000
-        # self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
-        #a slight challenge
-        #self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.22_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
-        #spotty easy
-        self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
-        #spotty slight challenge
-        #self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.25_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
-        #spotty challenge
-        #self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        self.pompyuse = 0
+        self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/blank.csv', delimiter=',', dtype="float32").T)
+        print("No Pompy data loaded.")
         self.datasx = 1000
         self.datasy = 1000
         self.offx = 100
         self.offy = 500
         self.cenx = 875
         self.ceny = 500
-        self.maxstr = np.amax(self.pompy)
-        #self.maxstr = 1
+        self.maxstr = 1
         self.LLMINV = 89.83204953368922 #lat lon to m inv
         self.DEGTORAD = 3.141592653589793 / 180.0
-        print("Max strength is", self.maxstr)
         plat, plon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
         self.showIcon('sl5', plat, plon, 'bluestar.png')
 
@@ -219,6 +199,36 @@ class SrclocModule(mp_module.MPModule):
                     self.console.set_status('PlEL', '', row=6)
                     self.showIcon('sl4', 0, 0, 'redstar.png')
                     self.console.set_status('PlTL', '', row=6)
+    def cmd_load_pompy(self,args):
+        loaded = True
+        if len(args) > 0:
+            self.pompyuse = int(args[0])
+        else:
+            print("No num given. Currently loaded is "+int(self.pompyuse))
+        if self.pompyuse == 1:
+            print("Loading ori but 1000x1000")
+            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        elif self.pompyuse == 2:
+            print("Loading a slight challenge")
+            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.22_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        elif self.pompyuse == 3:
+            print("Loading spotty easy")
+            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        elif self.pompyuse == 4:
+            print("Loading spotty slight challenge")
+            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.25_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        elif self.pompyuse == 5:
+            print("Loading spotty challenge")
+            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        elif self.pompyuse == 99:
+            print("Loading custom from /home/miche/pompy/ppo/")
+            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/'+args[1], delimiter=',', dtype="float32").T)
+        else:
+            print("Unknown data number.")
+            loaded = False
+        if loaded == True:
+            self.maxstr = np.amax(self.pompy)
+            print("Max strength is", self.maxstr)
 
     def idle_task(self):
     #     '''called on idle'''
