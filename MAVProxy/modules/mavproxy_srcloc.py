@@ -43,25 +43,40 @@ class SrclocModule(mp_module.MPModule):
         self.console.set_status('PlTL', '', row=6)
         self.console.set_status('PlUs', '', row=6)
         #original one - nice smooth straight plume
-        self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32").T)
-        self.datasx = 1000
-        self.datasy = 500
-        self.offx = 100
-        self.offy = 250
+        # self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/datax.csv', delimiter=',', dtype="float32").T)
+        # self.datasx = 1000
+        # self.datasy = 500
+        # self.offx = 100
+        # self.offy = 250
         #new, bigger one, has that weird swirly bit too...
         # self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo_log/leng60_dt0.01_spdup5_wx2_wy0_px5_py0_sprd30_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx2000_six1000_scx2000_proc.csv', delimiter=',', dtype="float32").T)
         # self.datasx = 2000
         # self.datasy = 1000
         # self.offx = 200
         # self.offy = 500
-        # self.pompyx = an_array[:, 1]
-        # self.pompyy = an_array[:, 2]
-        # self.pompyz = an_array[:, 3]
+        #ori but 1000x1000
+        # self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        #a slight challenge
+        #self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.22_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        #spotty easy
+        self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        #spotty slight challenge
+        #self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.25_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        #spotty challenge
+        #self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        self.datasx = 1000
+        self.datasy = 1000
+        self.offx = 100
+        self.offy = 500
+        self.cenx = 875
+        self.ceny = 500
         self.maxstr = np.amax(self.pompy)
         #self.maxstr = 1
         self.LLMINV = 89.83204953368922 #lat lon to m inv
         self.DEGTORAD = 3.141592653589793 / 180.0
         print("Max strength is", self.maxstr)
+        plat, plon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
+        self.showIcon('sl5', plat, plon, 'bluestar.png')
 
     #[ab;bc] "is essentially 0.5 over the covariance matrix", A is the amplitude, and (x0, y0) is the center
     def gauss2d(self, xy, amp, x0, y0, a, b, c):
@@ -99,7 +114,7 @@ class SrclocModule(mp_module.MPModule):
                             icon, layer=3, rotation=0, follow=False,
                             trail=mp_slipmap.SlipTrail(colour=(0, 255, 255))))
 
-    def toll(self, x, y): #to lat, long
+    def toll(self, x, y): #m to lat, long
         dlat = float(x)*self.LLMINV
         scl = self.lonscl(self.hlat) #just using hlat as it's complex to do avg of both. No issue for small distances
         dlon = (float(y) * self.LLMINV) / scl
@@ -129,6 +144,9 @@ class SrclocModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
+            # cx, cy = self.tom(m.lat,m.lon)
+            # if abs(cx-((self.cenx-self.offx)/100))<1.0 and abs(cy-((self.ceny-self.offy)/100))<1.0:
+            #     print("Within 1m of source.")
             #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
             self.stre = self.pompy2d(m.lat, m.lon)
             self.master.mav.plume_strength_send(self.stre/self.maxstr)
