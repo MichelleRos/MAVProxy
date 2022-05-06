@@ -37,12 +37,12 @@ class SrclocModule(mp_module.MPModule):
         self.stre = 0
         self.add_command('sl', self.cmd_sl, "Set source location", ['sl x y'])#['<%s|all>' % x])
         self.add_command('slp', self.cmd_load_pompy, "Load pompy data by number", ['slp no'])#['<%s|all>' % x])
-        self.console.set_status('PlSt', '', row=6)
-        self.showIcon('sl5', 0, 0, 'bluestar.png')
-        self.console.set_status('PlEL', '', row=6)
-        self.showIcon('sl4', 0, 0, 'redstar.png')
-        self.console.set_status('PlTL', '', row=6)
-        self.console.set_status('PlUs', '', row=6)
+        # self.console.set_status('PlSt', '', row=6)
+        # self.showIcon('sl5', 0, 0, 'bluestar.png')
+        # self.console.set_status('PlEL', '', row=6)
+        # self.showIcon('sl4', 0, 0, 'redstar.png')
+        #self.console.set_status('PlTL', '', row=6)
+        #self.console.set_status('PlUs', '', row=6)
         self.pompyuse = 0
         self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/blank.csv', delimiter=',', dtype="float32").T)
         print("No Pompy data loaded.")
@@ -74,7 +74,7 @@ class SrclocModule(mp_module.MPModule):
         x, y = self.tom(lat, lon)
         px = x*100 + self.offx #work in cm per "pixel"
         py = y*100 + self.offy
-        self.console.set_status('PlUs', 'PlUs %d %d' % (px, py), row=6)
+        #self.console.set_status('PlUs', 'PlUs %d %d' % (px, py), row=6)
         if px > self.datasx-1:
             px = self.datasx-1
         if px < 0:
@@ -100,7 +100,7 @@ class SrclocModule(mp_module.MPModule):
         dlon = (float(y) * self.LLMINV) / scl
         lat = self.hlat + dlat
         lon = self.hlon + dlon
-        x2, y2 = self.tom(lat,lon)
+        #x2, y2 = self.tom(lat,lon)
         #print("back to m "+str(x2)+" "+str(y2)) #for testing accuracy
         return lat, lon
 
