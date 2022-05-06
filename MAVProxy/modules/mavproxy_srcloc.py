@@ -205,6 +205,12 @@ class SrclocModule(mp_module.MPModule):
             self.pompyuse = int(args[0])
         else:
             print("No num given. Currently loaded is "+int(self.pompyuse))
+        if len(args) > 1:
+            self.offx = int(args[1])
+            plat, plon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
+            self.showIcon('sl5', plat, plon, 'bluestar.png')
+        else: 
+            print("No offset given. Using default")
         if self.pompyuse == 1:
             print("Loading ori but 1000x1000")
             self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
