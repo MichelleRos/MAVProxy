@@ -19,6 +19,7 @@ class MirModule(mp_module.MPModule):
         super(MirModule, self).__init__(mpstate, "mir", "mir module")
         '''initialisation code'''
         self.add_command('flyto', self.cmd_flyto, "Toggle fly to clicked location", ['flyto'])
+        self.add_command('showtar', self.cmd_showtar, "Toggle show target with red star", ['showtar'])
         self.hlat = -353632621   #home location, in (approx) centimetres
         self.hlon = 1491652374
         self.tlat = 0
@@ -26,7 +27,10 @@ class MirModule(mp_module.MPModule):
         self.TarX = 0
         self.TarY = 0
         self.flyto = 0
+        self.showtar = True
         self.alt = 600 #current altitude
+        self.LLMINV = 89.83204953368922 #lat lon to m inv
+        self.DEGTORAD = 3.141592653589793 / 180.0
 
     def showIcon(self, id, lat, lon, img):
         for mp in self.module_matching('map*'):
@@ -36,13 +40,24 @@ class MirModule(mp_module.MPModule):
                             icon, layer=3, rotation=0, follow=False,
                             trail=mp_slipmap.SlipTrail(colour=(0, 255, 255))))
 
-    def toll(self, x, y): #to lat, long
-        dlat = float(x)*89.83204953368922
-        scl = max(math.cos((self.hlat+dlat/2)* (1.0e-7 * (3.141592653589793/180.0))), 0.01)
-        dlon = (float(y) * 89.83204953368922) / scl
+    def toll(self, x, y): #m to lat, long
+        dlat = float(x)*self.LLMINV
+        scl = self.lonscl(self.hlat) #just using hlat as it's complex to do avg of both. No issue for small distances
+        dlon = (float(y) * self.LLMINV) / scl
         lat = self.hlat + dlat
         lon = self.hlon + dlon
+        #x2, y2 = self.tom(lat,lon)
+        #print("back to m "+str(x2)+" "+str(y2)) #for testing accuracy
         return lat, lon
+
+    def lonscl(self, lat):
+        scale = math.cos(lat * (1.0e-7 * self.DEGTORAD))
+        return max(scale, 0.01)
+
+    def tom(self, lat, lon): # to metres
+        x = (lat-self.hlat) * (1/self.LLMINV)
+        y = (lon-self.hlon) * (1/self.LLMINV) * self.lonscl((lat+self.hlat)/2)
+        return x, y
 
     def mavlink_packet(self, m):
         'handle a MAVLink packet'''
@@ -77,11 +92,19 @@ class MirModule(mp_module.MPModule):
 
     def cmd_flyto(self, args):
         if self.flyto == 1:
-            self.flyto == 0
+            self.flyto = 0
             print("Flyto off")
         else:
             self.flyto = 1
             print("Flyto on")
+
+    def cmd_showtar(self, args):
+        if self.showtar == False:
+            self.showtar = True
+            print("Showtar on")
+        else:
+            self.showtar = False
+            print("Showtar off")
 
     def idle_task(self):
 #     '''called on idle'''
