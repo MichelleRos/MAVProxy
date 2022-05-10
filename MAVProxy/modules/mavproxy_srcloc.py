@@ -27,6 +27,7 @@ class SrclocModule(mp_module.MPModule):
         self.done10 = 0
         self.numsave = 200
         self.dosl = 0
+        self.orst = True
         self.xyarr = np.ones((2, self.numsave))*20e7 #for now, initialising to 20deg lat long & 0 strength - i.e. very far from the reading
         self.strearr = np.zeros(self.numsave)
         self.now = 0
@@ -115,12 +116,12 @@ class SrclocModule(mp_module.MPModule):
 
     def mavlink_packet(self, m):
         'handle a MAVLink packet'''
-        if m.get_type() == 'GPS_GLOBAL_ORIGIN':
+        if m.get_type() == 'GPS_GLOBAL_ORIGIN' and self.orst:
             # message is sent when origin is initially set and when arming, apparently. Unfortunately no apparent way of triggering it.
-            # this means that currently the module must be started before the EKF sets its origin if the vehicle is started anywhere other than CMAC.
             self.hlat = m.latitude
             self.hlon = m.longitude
-            print("Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
+            print("SL: Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
+            self.orst = False
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
@@ -209,7 +210,7 @@ class SrclocModule(mp_module.MPModule):
             self.offx = int(args[1])
             plat, plon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
             self.showIcon('sl5', plat, plon, 'bluestar.png')
-        else: 
+        else:
             print("No offset given. Using default")
         if self.pompyuse == 1:
             print("Loading ori but 1000x1000")
