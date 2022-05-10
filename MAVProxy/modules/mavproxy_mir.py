@@ -22,6 +22,7 @@ class MirModule(mp_module.MPModule):
         self.add_command('showtar', self.cmd_showtar, "Toggle show target with red star", ['showtar'])
         self.hlat = -353632621   #home location, in (approx) centimetres
         self.hlon = 1491652374
+        self.orst = True
         self.tlat = 0
         self.tlon = 0
         self.TarX = 0
@@ -61,11 +62,12 @@ class MirModule(mp_module.MPModule):
 
     def mavlink_packet(self, m):
         'handle a MAVLink packet'''
-        if m.get_type() == 'GPS_GLOBAL_ORIGIN':
+        if m.get_type() == 'GPS_GLOBAL_ORIGIN' and self.orst:
             # message is sent when origin is initially set and when arming, apparently. Unfortunately no apparent way of triggering it.
             self.hlat = m.latitude
             self.hlon = m.longitude
-            print("Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
+            print("MIR: Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
+            self.orst = False
         if m.get_type() == 'GLOBAL_POSITION_INT':
             self.alt = m.alt
         if m.get_type() == 'NAMED_VALUE_FLOAT':
