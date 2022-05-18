@@ -219,6 +219,14 @@ class VehiclePanel(wx.Panel):
             self.doRTLAll = wx.Button(self, label="ALL", size=wx.Size(70, 50))
             self.Bind(wx.EVT_BUTTON, self.rtlAll, self.doRTLAll)
 
+        self.doSrcloc = wx.Button(self, label="Mode Srcloc", size=wx.Size(100, 50))
+        self.Bind(wx.EVT_BUTTON, self.srcloc, self.doSrcloc)
+        self.srclocSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.doLoiter = wx.Button(self, label="Mode Loiter", size=wx.Size(100, 50))
+        self.Bind(wx.EVT_BUTTON, self.loiter, self.doLoiter)
+        self.loiterSizer = wx.BoxSizer(wx.HORIZONTAL)
+
         self.doKill = wx.Button(self, label="KILL", size=wx.Size(100, 50))
         self.killTimer = None
         self.Bind(wx.EVT_BUTTON, self.kill, self.doKill)
@@ -265,6 +273,9 @@ class VehiclePanel(wx.Panel):
             self.sizer.Add(self.armSizer)
         else:
             self.sizer.Add(self.doArm)
+
+        self.sizer.Add(self.doLoiter)
+        self.sizer.Add(self.doSrcloc)
 
         if self.vehtype != mavutil.mavlink.MAV_TYPE_GROUND_ROVER:
             if self.isLeader:
@@ -370,6 +381,14 @@ class VehiclePanel(wx.Panel):
     def guided(self, event):
         '''switch to mode guided'''
         self.state.child_pipe.send(("GUIDED", self.sysid, self.compid))
+
+    def srcloc(self, event):
+        '''switch to mode srcloc'''
+        self.state.child_pipe.send(("SRCLOC", self.sysid, self.compid))
+
+    def loiter(self, event):
+        '''switch to mode loiter'''
+        self.state.child_pipe.send(("LOITER", self.sysid, self.compid))
 
     def guidedAll(self, event):
         '''mode guided for leader and all followers'''
@@ -876,7 +895,7 @@ class swarm(mp_module.MPModule):
                     0,  # param5
                     0,  # param6
                     self.swarm_settings.takeoffalt))  # param7
-            elif cmd in ["FOLLOW", "RTL", "AUTO", "GUIDED"]:
+            elif cmd in ["FOLLOW", "RTL", "AUTO", "GUIDED", "LOITER"]:
                 mode_mapping = self.master.mode_mapping()
                 self.mpstate.foreach_mav(sysid, compid, lambda mav: mav.command_long_send(sysid,
                                                                                           compid,
@@ -884,6 +903,18 @@ class swarm(mp_module.MPModule):
                                                                                           0,
                                                                                           mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
                                                                                           mode_mapping[cmd],
+                                                                                          0,
+                                                                                          0,
+                                                                                          0,
+                                                                                          0,
+                                                                                          0))
+            elif cmd == "SRCLOC":
+                self.mpstate.foreach_mav(sysid, compid, lambda mav: mav.command_long_send(sysid,
+                                                                                          compid,
+                                                                                          mavutil.mavlink.MAV_CMD_DO_SET_MODE,
+                                                                                          0,
+                                                                                          mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+                                                                                          7,
                                                                                           0,
                                                                                           0,
                                                                                           0,
