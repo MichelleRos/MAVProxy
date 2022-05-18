@@ -170,6 +170,16 @@ class SrclocModule(mp_module.MPModule):
                 self.strearr = np.zeros(self.numsave)
                 self.upto = 0
                 #print('Set source to %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7))
+            if args[0] == 'sethome':
+                latlon = self.mpstate.click_location
+                if latlon is not None:
+                    self.hlat = int(latlon[0]*1.0e7)
+                    self.hlon = int(latlon[1]*1.0e7)
+                else:
+                    print('Click on map before running command to set location')
+                print('Home is at %.7f %.7f' % (self.hlat*1e-7, self.hlon*1e-7))
+                plat, plon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
+                self.showIcon('sl5', plat, plon, 'bluestar.png')
             if args[0] == 'tpar':
                 self.gauTPar[0] = float(args[1])
                 self.gauTPar[1] = float(args[2])
@@ -205,7 +215,7 @@ class SrclocModule(mp_module.MPModule):
         if len(args) > 0:
             self.pompyuse = int(args[0])
         else:
-            print("No num given. Currently loaded is "+int(self.pompyuse))
+            print("No num given. Currently loaded is",int(self.pompyuse))
         if len(args) > 1:
             self.offx = int(args[1])
             plat, plon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
