@@ -237,6 +237,9 @@ class SrclocModule(mp_module.MPModule):
         elif self.pompyuse == 5:
             print("Loading spotty challenge")
             self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+        elif self.pompyuse == 6:
+            print("Loading a challenge")
+            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
         elif self.pompyuse == 99:
             print("Loading custom from /home/miche/pompy/ppo/")
             self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/'+args[1], delimiter=',', dtype="float32").T)
