@@ -211,7 +211,6 @@ class SrclocModule(mp_module.MPModule):
                     self.showIcon('sl4', 0, 0, 'redstar.png')
                     self.console.set_status('PlTL', '', row=6)
     def cmd_load_pompy(self,args):
-        loaded = True
         if len(args) > 0:
             self.pompyuse = int(args[0])
         else:
@@ -222,31 +221,33 @@ class SrclocModule(mp_module.MPModule):
             self.showIcon('sl5', plat, plon, 'bluestar.png')
         else:
             print("No offset given. Using default")
+        filegiven = True
         if self.pompyuse == 1:
             print("Loading ori but 1000x1000")
-            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+            filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1'
         elif self.pompyuse == 2:
             print("Loading a slight challenge")
-            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.22_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+            filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.22_sx700_six1000_scx1000_ar1'
         elif self.pompyuse == 3:
             print("Loading spotty easy")
-            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+            filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.2_sx700_six1000_scx1000_ar1'
         elif self.pompyuse == 4:
             print("Loading spotty slight challenge")
-            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.25_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+            filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.25_sx700_six1000_scx1000_ar1'
         elif self.pompyuse == 5:
             print("Loading spotty challenge")
-            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+            filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1'
         elif self.pompyuse == 6:
             print("Loading a challenge")
-            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1.csv', delimiter=',', dtype="float32").T)
+            filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1'
         elif self.pompyuse == 99:
-            print("Loading custom from /home/miche/pompy/ppo/")
-            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/'+args[1], delimiter=',', dtype="float32").T)
+            print("Loading custom from /home/miche/pompy/ppo/ (no extension)")
+            filename = args[1]
         else:
             print("Unknown data number.")
-            loaded = False
-        if loaded == True:
+            filegiven = False
+        if filegiven == True: #0 = no file, 1 = file given but not loaded
+            self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/'+filename+'.csv', delimiter=',', dtype="float32").T)
             self.maxstr = np.amax(self.pompy)
             print("Max strength is", self.maxstr)
 
