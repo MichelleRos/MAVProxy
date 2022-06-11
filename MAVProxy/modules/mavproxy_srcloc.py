@@ -214,9 +214,12 @@ class SrclocModule(mp_module.MPModule):
         if len(args) > 0:
             self.pompyuse = int(args[0])
         else:
-            print("No num given. Currently loaded is",int(self.pompyuse))
+            print("No num given. Currently loaded is", self.pompyuse)
         if len(args) > 1:
-            self.offx = int(args[1])
+            if self.pompyuse == 99:
+                self.offx = int(args[2])
+            else: 
+                self.offx = int(args[1])
             plat, plon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
             self.showIcon('sl5', plat, plon, 'bluestar.png')
         else:
@@ -240,8 +243,20 @@ class SrclocModule(mp_module.MPModule):
         elif self.pompyuse == 6:
             print("Loading a challenge")
             filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1'
+        elif self.pompyuse == 7:
+            print("Loading spotty2 easy")
+            filename = 'leng20_dt0.01_spdup5_wx3_wy0_px5_py0_sprd10_pfrel30_pfsp0.004_pfmax2000_pfmo900000000.0_crd3_ng20_nd0.1_nb0.2_sx1000_six1000_scx1000_ar1_f20'
+        elif self.pompyuse == 8:
+            print("Loading spotty2 medium")
+            filename = 'leng20_dt0.01_spdup5_wx3_wy0_px5_py0_sprd10_pfrel30_pfsp0.004_pfmax2000_pfmo900000000.0_crd5_ng20_nd0.1_nb0.2_sx1000_six1000_scx1000_ar1_f20'
+        elif self.pompyuse == 9:
+            print("Loading spotty2 hard")
+            filename = 'leng20_dt0.01_spdup5_wx3_wy0_px5_py0_sprd10_pfrel30_pfsp0.002_pfmax2000_pfmo900000000.0_crd5_ng20_nd0.1_nb0.2_sx1000_six1000_scx1000_ar1_f20'
+        elif self.pompyuse == 10:
+            print("Loading spotty2 very hard")
+            filename = 'leng20_dt0.01_spdup5_wx3_wy0_px5_py0_sprd10_pfrel30_pfsp0.002_pfmax2000_pfmo900000000.0_crd10_ng20_nd0.1_nb0.2_sx1000_six1000_scx1000_ar1_f20'
         elif self.pompyuse == 99:
-            print("Loading custom from /home/miche/pompy/ppo/ (no extension)")
+            print("Loading custom from /home/miche/pompy/ppo/ (no extension, must give offset)")
             filename = args[1]
         else:
             print("Unknown data number.")
