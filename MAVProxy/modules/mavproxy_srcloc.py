@@ -171,12 +171,16 @@ class SrclocModule(mp_module.MPModule):
                 self.upto = 0
                 #print('Set source to %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7))
             if args[0] == 'sethome':
-                latlon = self.mpstate.click_location
-                if latlon is not None:
-                    self.hlat = int(latlon[0]*1.0e7)
-                    self.hlon = int(latlon[1]*1.0e7)
+                if len(args) == 3:
+                    self.hlat = int(float(args[1])*1.0e7)
+                    self.hlon = int(float(args[2])*1.0e7)
                 else:
-                    print('Click on map before running command to set location')
+                    latlon = self.mpstate.click_location
+                    if latlon is not None:
+                        self.hlat = int(latlon[0]*1.0e7)
+                        self.hlon = int(latlon[1]*1.0e7)
+                    else:
+                        print('Click on map before running command to set location')
                 print('Home is at %.7f %.7f' % (self.hlat*1e-7, self.hlon*1e-7))
                 plat, plon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
                 self.showIcon('sl5', plat, plon, 'bluestar.png')
