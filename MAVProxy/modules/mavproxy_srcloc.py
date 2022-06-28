@@ -125,13 +125,14 @@ class SrclocModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
+            sysid = m.get_srcSystem()
             # cx, cy = self.tom(m.lat,m.lon)
             # if abs(cx-((self.cenx-self.offx)/100))<1.0 and abs(cy-((self.ceny-self.offy)/100))<1.0:
             #     print("Within 1m of source.")
             #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
             self.stre = self.pompy2d(m.lat, m.lon)
-            self.master.mav.plume_strength_send(self.stre/self.maxstr)
-
+            self.master.mav.plume_strength_send(sysid, self.stre/self.maxstr)
+            self.console.set_status('sysid', 'sysid %d' % sysid, row=8)
             if (self.now - self.prev) > 0.7e3:
                 #print("Running", self.now - self.prev)
                 self.xyarr[:,self.upto] = m.lat, m.lon
