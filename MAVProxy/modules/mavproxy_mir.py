@@ -71,12 +71,14 @@ class MirModule(mp_module.MPModule):
         if m.get_type() == 'GLOBAL_POSITION_INT':
             self.alt = m.alt
         if m.get_type() == 'NAMED_VALUE_FLOAT':
-            if m.name == "PLU_STR":
-                self.console.set_status(m.name, m.name + ' %0.4f' % m.value, row=8)
+            if m.name == "PLUR":
+                self.console.set_status(m.name, m.name + ' %0.7f' % m.value, row=8)
+            elif m.name == "PLUS":
+                self.console.set_status(m.name, m.name + ' %0.7f' % m.value, row=8)
             elif re.match(r'^FINI', m.name):
-                self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=8)
-            elif re.match(r'^BSC', m.name):
-                 self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=7)
+                self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=7)
+            elif re.match(r'^BSC', m.name): #generally no longer sent
+                 self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=8)
             elif m.name ==  'TarX':
                 self.TarX = m.value
             elif m.name ==  'TarY':
@@ -113,6 +115,11 @@ class MirModule(mp_module.MPModule):
         tlat, tlon = self.toll(self.TarX,self.TarY)
         self.showIcon('tar', tlat, tlon, 'redstar.png')
         self.console.set_status('tar', 'Tar X %.2f, Tar Y %.2f' % (self.TarX, self.TarY), row=7)
+
+        # tnow_ms = int((time.time() - self.mpstate.start_time_s)*1000)
+        # name = "testing"
+        # value = float(335)
+        # self.master.mav.named_value_float_send(tnow_ms, name.encode("utf-8"), value)
 
         if self.flyto == 1:
             latlon = self.mpstate.click_location
