@@ -73,8 +73,6 @@ class MirModule(mp_module.MPModule):
         if m.get_type() == 'NAMED_VALUE_FLOAT':
             if m.name == "PLUR":
                 self.console.set_status(m.name, m.name + ' %0.7f' % m.value, row=8)
-            elif m.name == "PLUS":
-                self.console.set_status(m.name, m.name + ' %0.7f' % m.value, row=8)
             elif re.match(r'^FINI', m.name):
                 self.console.set_status(m.name, m.name + ' %.2f' % m.value, row=7)
             elif re.match(r'^BSC', m.name): #generally no longer sent
