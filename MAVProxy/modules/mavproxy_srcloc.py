@@ -13,9 +13,10 @@ import numpy as np
 import scipy.optimize as opt
 import math
 
+#note: this module is for all simulated plume stuff.
 class SrclocModule(mp_module.MPModule):
     def __init__(self, mpstate):
-        super(SrclocModule, self).__init__(mpstate, "srcloc", "srcloc module")
+        super(SrclocModule, self).__init__(mpstate, "srcloc", "srcloc module", multi_vehicle=True)
         '''initialisation code'''
         self.hlat = -353632621   #home location, in (approx) centimetres
         self.hlon = 1491652374
@@ -36,6 +37,7 @@ class SrclocModule(mp_module.MPModule):
         self.gauTPar = np.array([0.25, 0, 0.5])
         self.cov = 0
         self.stre = 0
+        self.PLUS = -1
         self.add_command('sl', self.cmd_sl, "Set source location", ['sl x y'])#['<%s|all>' % x])
         self.add_command('slp', self.cmd_load_pompy, "Load pompy data by number", ['slp no'])#['<%s|all>' % x])
         # self.console.set_status('PlSt', '', row=6)
@@ -122,6 +124,9 @@ class SrclocModule(mp_module.MPModule):
             self.hlon = m.longitude
             print("SL: Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
             self.orst = False
+        if m.get_type() == 'NAMED_VALUE_FLOAT':
+            if m.name == "PLUS":
+                self.PLUS = m.value
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
@@ -132,7 +137,7 @@ class SrclocModule(mp_module.MPModule):
             #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
             self.stre = self.pompy2d(m.lat, m.lon)
             self.master.mav.plume_strength_send(sysid, self.stre/self.maxstr)
-            self.console.set_status('sysid', 'sysid %d' % sysid, row=8)
+            self.console.set_status('sysid%d' % sysid, 'PLUS %0.7f sysid %d ' % (self.PLUS, sysid), row=8)
             if (self.now - self.prev) > 0.7e3:
                 #print("Running", self.now - self.prev)
                 self.xyarr[:,self.upto] = m.lat, m.lon
