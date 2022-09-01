@@ -219,6 +219,10 @@ class VehiclePanel(wx.Panel):
             self.doRTLAll = wx.Button(self, label="ALL", size=wx.Size(70, 50))
             self.Bind(wx.EVT_BUTTON, self.rtlAll, self.doRTLAll)
 
+        self.doPSO = wx.Button(self, label="Mode PSO", size=wx.Size(100, 50))
+        self.Bind(wx.EVT_BUTTON, self.pso, self.doPSO)
+        self.psoSizer = wx.BoxSizer(wx.HORIZONTAL)
+
         self.doSrcloc = wx.Button(self, label="Mode Srcloc", size=wx.Size(100, 50))
         self.Bind(wx.EVT_BUTTON, self.srcloc, self.doSrcloc)
         self.srclocSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -275,6 +279,7 @@ class VehiclePanel(wx.Panel):
             self.sizer.Add(self.doArm)
 
         self.sizer.Add(self.doLoiter)
+        self.sizer.Add(self.doPSO)
         self.sizer.Add(self.doSrcloc)
 
         if self.vehtype != mavutil.mavlink.MAV_TYPE_GROUND_ROVER:
@@ -385,6 +390,10 @@ class VehiclePanel(wx.Panel):
     def srcloc(self, event):
         '''switch to mode srcloc'''
         self.state.child_pipe.send(("SRCLOC", self.sysid, self.compid))
+
+    def pso(self, event):
+        '''switch to mode pso'''
+        self.state.child_pipe.send(("PSO", self.sysid, self.compid))
 
     def loiter(self, event):
         '''switch to mode loiter'''
@@ -915,6 +924,18 @@ class swarm(mp_module.MPModule):
                                                                                           0,
                                                                                           mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
                                                                                           7,
+                                                                                          0,
+                                                                                          0,
+                                                                                          0,
+                                                                                          0,
+                                                                                          0))
+            elif cmd == "PSO":
+                self.mpstate.foreach_mav(sysid, compid, lambda mav: mav.command_long_send(sysid,
+                                                                                          compid,
+                                                                                          mavutil.mavlink.MAV_CMD_DO_SET_MODE,
+                                                                                          0,
+                                                                                          mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+                                                                                          8,
                                                                                           0,
                                                                                           0,
                                                                                           0,
