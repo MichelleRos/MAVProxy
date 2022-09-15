@@ -748,8 +748,8 @@ class FTPModule(mp_module.MPModule):
                 self.handle_reply_read(op, m)
             elif op.req_opcode == OP_CalcFileCRC32:
                 self.handle_crc_reply(op, m)
-            else:
-                print('FTP Unknown %s' % str(op))
+            #else:
+                #print('FTP Unknown %s' % str(op))
 
     def send_gap_read(self, g):
         '''send a read for a gap'''
