@@ -129,7 +129,7 @@ class MirModule(mp_module.MPModule):
                     self.tlon = tlon
                     # print("Sending target loc: %d %d %d %d" % (self.tlat, self.tlon, tlat, tlon))
                     self.master.mav.plume_est_loc_send(self.tlat, self.tlon, self.alt, 0.999) #actually just sending the target location
-                    self.showIcon('sl5', self.tlat, self.tlon, 'bluestar.png')
+                    self.showIcon('tar2', self.tlat, self.tlon, 'redstar.png')
 
 def init(mpstate):
     '''initialise module'''
