@@ -86,7 +86,7 @@ class SrclocModule(mp_module.MPModule):
             py = self.datasy-1
         if py < 0:
             py = 0
-        self.console.set_status('Deb', 'Deb x%.0f y%.0f s-px%.0f s-py %.0f' % (x,y,px,py), row=6)
+        # self.console.set_status('Deb', 'Deb x%.0f y%.0f s-px%.0f s-py %.0f' % (x,y,px,py), row=6)
         return self.pompy[int(px),int(py)]
 
     def showIcon(self, id, lat, lon, img):
@@ -125,8 +125,13 @@ class SrclocModule(mp_module.MPModule):
             print("SL: Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
             self.orst = False
         if m.get_type() == 'NAMED_VALUE_FLOAT':
-            if m.name == "PLUS":
-                self.PLUS = m.value
+            if m.name == 'GBEST':
+                self.console.set_status('gbest%d' % m.get_srcSystem(), 'GBest acc-to %d is %0.0f' % (m.get_srcSystem(), m.value), row=6)
+        #     if m.name == "PLUS":
+        #         self.PLUS = m.value
+        if m.get_type() == 'DEBUG_VECT':
+            if m.name == 'PBEST':
+                self.console.set_status('pbest%d%d' % (m.get_srcSystem(),int(m.z)), 'PBest acc-to %0.0f for %d is %0.5f %0.5f ' % (m.get_srcSystem(), int(m.z), m.x, m.y), row=(7+int(m.z)))
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
@@ -137,7 +142,7 @@ class SrclocModule(mp_module.MPModule):
             #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
             self.stre = self.pompy2d(m.lat, m.lon)
             self.master.mav.plume_strength_send(sysid, self.stre/self.maxstr)
-            self.console.set_status('sysid%d' % sysid, 'PLUS %0.7f sysid %d ' % (self.PLUS, sysid), row=8)
+            self.console.set_status('sysid%d' % sysid, 'PLUS %0.7f sysid %d ' % (self.stre/self.maxstr, sysid), row=7)
             if (self.now - self.prev) > 0.7e3:
                 #print("Running", self.now - self.prev)
                 self.xyarr[:,self.upto] = m.lat, m.lon
@@ -279,7 +284,7 @@ class SrclocModule(mp_module.MPModule):
     def idle_task(self):
     #     '''called on idle'''
     #     # update status for detected plume strength
-        self.console.set_status('PlSt', 'PS %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=6)
+        # self.console.set_status('PlSt', 'PS %.7f ut%d' % (self.stre/self.maxstr, self.upto), row=6)
     #     # update icon & status for estimated location of source
         if self.dosl == 1:
             self.showIcon('sl5', self.elat, self.elon, 'bluestar.png')
