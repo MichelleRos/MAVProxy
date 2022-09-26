@@ -12,6 +12,7 @@ import sys, traceback
 import numpy as np
 import scipy.optimize as opt
 import math
+import re
 
 #note: this module is for all simulated plume stuff.
 class SrclocModule(mp_module.MPModule):
@@ -86,10 +87,11 @@ class SrclocModule(mp_module.MPModule):
             py = self.datasy-1
         if py < 0:
             py = 0
-        # self.console.set_status('Deb', 'Deb x%.0f y%.0f s-px%.0f s-py %.0f' % (x,y,px,py), row=6)
+        self.console.set_status('Deb', 'Deb x%.0f y%.0f s-px%.0f s-py %.0f' % (x,y,px,py), row=6)
         return self.pompy[int(px),int(py)]
 
     def showIcon(self, id, lat, lon, img):
+        #assumes lat & lon in int form, not standard
         for mp in self.module_matching('map*'):
             icon = mp.map.icon(img)
             #print("Icon at: %.1f %.1f" % (m.lat, m.lon))
@@ -129,9 +131,16 @@ class SrclocModule(mp_module.MPModule):
                 self.console.set_status('gbest%d' % m.get_srcSystem(), 'GBest acc-to %d is %0.0f' % (m.get_srcSystem(), m.value), row=6)
         #     if m.name == "PLUS":
         #         self.PLUS = m.value
-        if m.get_type() == 'DEBUG_VECT':
-            if m.name == 'PBEST':
-                self.console.set_status('pbest%d%d' % (m.get_srcSystem(),int(m.z)), 'PBest acc-to %0.0f for %d is %0.5f %0.5f ' % (m.get_srcSystem(), int(m.z), m.x, m.y), row=(7+int(m.z)))
+        # if m.get_type() == 'DEBUG_VECT':
+        #     if m.name == 'PBEST':
+        #         self.console.set_status('pbest%d%d' % (m.get_srcSystem(),int(m.z)), 'PBest acc-to %0.0f for %d is %0.5f %0.5f ' % (m.get_srcSystem(), int(m.z), m.x, m.y), row=(7+int(m.z)))
+        if m.get_type() == 'DEBUG_LOC':
+            if re.match(r'^PBEST', m.name):
+                id = int(m.name[5:])
+                # print("This is id: ")
+                # print(id)
+                self.console.set_status('pbest%d%d' % (m.get_srcSystem(),id), 'PBest acc-to %0.0f for %d is %d %d ' % (m.get_srcSystem(), id, m.lat, m.lon), row=(7+id))
+                self.showIcon('pbestst%d%d' % (m.get_srcSystem(),id), m.lat, m.lon, 'redstar.png')
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm, thus divide by 100 to get m
             self.now = m.time_boot_ms
@@ -139,8 +148,8 @@ class SrclocModule(mp_module.MPModule):
             # cx, cy = self.tom(m.lat,m.lon)
             # if abs(cx-((self.cenx-self.offx)/100))<1.0 and abs(cy-((self.ceny-self.offy)/100))<1.0:
             #     print("Within 1m of source.")
-            #self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
-            self.stre = self.pompy2d(m.lat, m.lon)
+            self.stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
+            # self.stre = self.pompy2d(m.lat, m.lon)
             self.master.mav.plume_strength_send(sysid, self.stre/self.maxstr)
             self.console.set_status('sysid%d' % sysid, 'PLUS %0.7f sysid %d ' % (self.stre/self.maxstr, sysid), row=7)
             if (self.now - self.prev) > 0.7e3:
@@ -176,11 +185,19 @@ class SrclocModule(mp_module.MPModule):
              print("Usage: set x y | tpar a b c | epar a b c | ppar | setp lat lon | flyto on/off | dosrcloc on/off")
         else:
             if args[0] == 'set':
-                self.slat, self.slon = self.toll(args[1],args[2])
+                if len(args) == 3:
+                    self.slat, self.slon = self.toll(args[1],args[2])
+                else: 
+                    latlon = self.mpstate.click_location
+                    if latlon is not None:
+                        self.slat = int(latlon[0]*1.0e7)
+                        self.slon = int(latlon[1]*1.0e7)
+                    else:
+                        print('Click on map before running command to set location')
                 self.xyarr = np.ones((2, self.numsave))*20e7
                 self.strearr = np.zeros(self.numsave)
                 self.upto = 0
-                #print('Set source to %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7))
+                print('Set gauss source location to %.7f %.7f' % (self.slat*1e-7, self.slon*1e-7))
             if args[0] == 'sethome':
                 if len(args) == 3:
                     self.hlat = int(float(args[1])*1.0e7)
