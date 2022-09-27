@@ -38,6 +38,7 @@ class SrclocModule(mp_module.MPModule):
         self.cenx = 875
         self.ceny = 500
         self.slat, self.slon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
+        self.gbests = np.zeros(11)
 
     #[ab;bc] "is essentially 0.5 over the covariance matrix", A is the amplitude, and (x0, y0) is the center
     def gauss2d(self, xy, amp, x0, y0, a, b, c):
@@ -109,21 +110,27 @@ class SrclocModule(mp_module.MPModule):
             self.changeHome(m.latitude, m.longitude)
         if m.get_type() == 'NAMED_VALUE_FLOAT':
             if m.name == 'GBEST':
-                self.console.set_status('gbest%d' % m.get_srcSystem(), 'GBest acc-to %d is %0.0f' % (m.get_srcSystem(), m.value), row=6)
+                sysid = m.get_srcSystem()
+                self.console.set_status('gbest%d' % sysid, 'GBest acc-to %d is %0.0f' % (sysid, m.value), row=6+int((sysid-1)/3))
+                self.gbests[sysid] = m.value
         if m.get_type() == 'DEBUG_LOC':
             if re.match(r'^PBEST', m.name):
                 id = int(m.name[5:])
-                # print("This is id: ")
-                # print(id)
-                self.console.set_status('pbest%d%d' % (m.get_srcSystem(),id), 'PBest acc-to %0.0f for %d is %d %d ' % (m.get_srcSystem(), id, m.lat, m.lon), row=(7+id))
-                self.showIcon('pbestst%d%d' % (m.get_srcSystem(),id), m.lat, m.lon, 'redstar.png')
+                sysid = m.get_srcSystem()
+                # Disabled the line below as the redstars work well for display
+                # self.console.set_status('pbest%d%d' % (m.get_srcSystem(),id), 'PBest acc-to %0.0f for %d is %d %d ' % (m.get_srcSystem(), id, m.lat, m.lon), row=(7+id))
+                if int(self.gbests[sysid]) == id:
+                    self.showIcon('pbestst%d%d' % (sysid,id), m.lat, m.lon, 'orangestar.png')
+                else: 
+                    self.showIcon('pbestst%d%d' % (sysid,id), m.lat, m.lon, 'redstar.png')
+                    # print('Red star shown because gbest for sysid%d is gbest%d, not id%d' % (sysid, self.gbests[sysid], id))
         if m.get_type() == 'GLOBAL_POSITION_INT':
             #0.0000001 deg =~ 1 cm, i.e. m.lat & m.lon are approx in cm
             sysid = m.get_srcSystem()
             if self.pompyuse == 0: stre = self.gauss2d((m.lat, m.lon), 1, self.slat, self.slon, self.gauTPar[0], self.gauTPar[1], self.gauTPar[2])
             else: stre = self.pompy2d(m.lat, m.lon)
             self.master.mav.plume_strength_send(sysid, stre/self.maxstr)
-            self.console.set_status('sysid%d' % sysid, 'PLUS %0.7f sysid %d ' % (stre/self.maxstr, sysid), row=7)
+            self.console.set_status('sysid%d' % sysid, 'PLUS %0.7f sysid %d ' % (stre/self.maxstr, sysid), row=6+int((sysid-1)/3))
 
     def cmd_sl(self, args):
         '''handle Source Location setting'''
