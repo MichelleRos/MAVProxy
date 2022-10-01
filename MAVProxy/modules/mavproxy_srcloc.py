@@ -1,18 +1,13 @@
  #!/usr/bin/env python
 '''Srcloc'''
 
-import time, os
-
 from MAVProxy.modules.lib import mp_module
-from MAVProxy.modules.lib import mp_settings
-from MAVProxy.modules.lib import mp_menu
 from MAVProxy.modules.mavproxy_map import mp_slipmap
-from pymavlink import mavutil
-import sys, traceback
 import numpy as np
-import scipy.optimize as opt
 import math
 import re
+
+#use self.say("Flight battery warning") to print in console
 
 #note: this module is for all simulated plume stuff.
 class SrclocModule(mp_module.MPModule):
@@ -21,9 +16,9 @@ class SrclocModule(mp_module.MPModule):
         '''initialisation code'''
         self.LLMINV = 89.83204953368922 #lat lon to m inv
         self.DEGTORAD = 3.141592653589793 / 180.0
-        self.hlat = -353632621   #home location, in (approx) centimetres
-        self.hlon = 1491652374
-        self.orst = True #to set origin on first message
+        self.hlat = -352802523   #home location, in (approx) centimetres
+        self.hlon = 1490058409
+        self.orst = False #change to true to set origin on first GPS_GLOBAL_ORIGIN message
         self.gauTPar = np.array([0.25, 0, 0.5])
         self.add_command('sl', self.cmd_sl, "Set source location", ['sl x y'])#['<%s|all>' % x])
         self.add_command('slp', self.cmd_load_pompy, "Load pompy data by number", ['slp no'])#['<%s|all>' % x])
@@ -200,9 +195,9 @@ class SrclocModule(mp_module.MPModule):
         elif self.pompyuse == 4:
             print("Loading spotty slight challenge")
             filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.05_pfmax2000_pfmo900000000.0_ng20_nd0.1_nb0.25_sx700_six1000_scx1000_ar1'
-        elif self.pompyuse == 5:
-            print("Loading spotty challenge")
-            filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1'
+        # elif self.pompyuse == 5:
+        #     print("Loading spotty challenge")
+        #     filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1'
         elif self.pompyuse == 6:
             print("Loading a challenge")
             filename = 'leng20_dt0.01_spdup5_wx2_wy0_px5_py0_sprd10_pfrel30_pfsp0.5_pfmax2000_pfmo20000000000.0_ng40_nd0.1_nb0.3_sx700_six1000_scx1000_ar1'
