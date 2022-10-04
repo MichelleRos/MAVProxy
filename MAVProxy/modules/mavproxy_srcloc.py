@@ -28,9 +28,9 @@ class SrclocModule(mp_module.MPModule):
         print("No Pompy data loaded. Using gaussian.")
         self.datasx = 1000
         self.datasy = 1000
-        self.offx = 100
+        self.offx = 100 #x is North
         self.offy = 500
-        self.cenx = 875
+        self.cenx = 920
         self.ceny = 500
         self.slat, self.slon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
         self.gbests = np.zeros(11)
@@ -222,7 +222,8 @@ class SrclocModule(mp_module.MPModule):
         if filegiven == True: #0 = no file, 1 = file given but not loaded
             self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/'+filename+'.csv', delimiter=',', dtype="float32").T)
             self.maxstr = np.amax(self.pompy)
-            print("Max strength is", self.maxstr)
+            self.cenx, self.ceny = np.unravel_index(np.argmax(self.pompy, axis=None), self.pompy.shape)
+            print("Max strength is", self.maxstr, "centre pos is", self.cenx, self.ceny)
             self.slat, self.slon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
 
     def idle_task(self):
