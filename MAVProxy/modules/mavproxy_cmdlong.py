@@ -25,6 +25,8 @@ class CmdlongModule(mp_module.MPModule):
                          ['<enable|disable|release>'])
         self.add_command('long', self.cmd_long, "execute mavlink long command",
                          self.cmd_long_commands())
+        self.add_command('longb', self.cmd_long_broadcast, "execute mavlink long command as broadcast",
+                         self.cmd_long_commands())
         self.add_command('command_int', self.cmd_command_int, "execute mavlink command_int",
                          self.cmd_long_commands())
         self.add_command('engine', self.cmd_engine, "engine")
@@ -400,6 +402,36 @@ class CmdlongModule(mp_module.MPModule):
             floating_args.append(float(0))
         self.master.mav.command_long_send(self.settings.target_system,
                                           self.settings.target_component,
+                                          command,
+                                          0,
+                                          *floating_args)
+
+    def cmd_long_broadcast(self, args):
+        '''execute supplied command long as broadcast'''
+        if len(args) < 1:
+            print("Usage: longb <command> [arg1] [arg2]...")
+            return
+        command = None
+        if args[0].isdigit():
+            command = int(args[0])
+        else:
+            try:
+                command = getattr(mavutil.mavlink, args[0])
+            except AttributeError as e:
+                try:
+                    command = getattr(mavutil.mavlink, "MAV_CMD_" + args[0])
+                except AttributeError as e:
+                    pass
+
+        if command is None:
+            print("Unknown command long ({0})".format(args[0]))
+            return
+
+        floating_args = [ float(x) for x in args[1:] ]
+        while len(floating_args) < 7:
+            floating_args.append(float(0))
+        self.master.mav.command_long_send(0,
+                                          0,
                                           command,
                                           0,
                                           *floating_args)
