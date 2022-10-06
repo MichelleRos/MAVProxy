@@ -848,10 +848,10 @@ class swarm(mp_module.MPModule):
 
         # do we need to get any vehicle follow sysid params?
         # only send param requests 1 per 0.1sec, to avoid link flooding
-        if self.requestParams_timer.trigger() and len(self.vehParamsToGet) > 0:
-            (sysid, compid) = self.vehParamsToGet.pop(0)
-            self.mpstate.foreach_mav(sysid, compid, lambda mav: mav.param_request_read_send(
-                sysid, compid, parmString("FOLL_SYSID"), -1))
+        # if self.requestParams_timer.trigger() and len(self.vehParamsToGet) > 0:
+        #     (sysid, compid) = self.vehParamsToGet.pop(0)
+        #     self.mpstate.foreach_mav(sysid, compid, lambda mav: mav.param_request_read_send(
+        #         sysid, compid, parmString("FOLL_SYSID"), -1))
 
         if self.RerequestParams_timer.trigger():
             # If any in vehicleListing are missing their FOLL_SYSID, re-request
