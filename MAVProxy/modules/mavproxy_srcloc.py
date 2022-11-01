@@ -27,6 +27,7 @@ class SrclocModule(mp_module.MPModule):
         self.datasx = 1000
         self.datasy = 1000
         self.pompy = np.zeros((self.datasx, self.datasy), dtype="float32")
+        print("No Pompy data loaded. Using gaussian.")
         self.offx = 100 #x is North
         self.offy = 500
         self.cenx = 920
@@ -115,7 +116,7 @@ class SrclocModule(mp_module.MPModule):
                 # self.console.set_status('pbest%d%d' % (m.get_srcSystem(),id), 'PBest acc-to %0.0f for %d is %d %d ' % (m.get_srcSystem(), id, m.lat, m.lon), row=(7+id))
                 if int(self.gbests[sysid]) == id:
                     self.showIcon('pbestst%d%d' % (sysid,id), m.lat, m.lon, 'orangestar.png')
-                else: 
+                else:
                     self.showIcon('pbestst%d%d' % (sysid,id), m.lat, m.lon, 'redstar.png')
                     # print('Red star shown because gbest for sysid%d is gbest%d, not id%d' % (sysid, self.gbests[sysid], id))
         if m.get_type() == 'GLOBAL_POSITION_INT':
@@ -135,7 +136,7 @@ class SrclocModule(mp_module.MPModule):
                 if self.pompyuse != 0:
                     if len(args) == 3:
                         self.slat, self.slon = self.toll(args[1],args[2])
-                    else: 
+                    else:
                         latlon = self.mpstate.click_location
                         if latlon is not None:
                             self.slat = int(latlon[0]*1.0e7)
@@ -172,7 +173,7 @@ class SrclocModule(mp_module.MPModule):
         if len(args) > 1:
             if self.pompyuse == 99:
                 self.offx = int(args[2])
-            else: 
+            else:
                 self.offx = int(args[1])
             self.slat, self.slon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
         else:
