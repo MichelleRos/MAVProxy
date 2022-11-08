@@ -24,10 +24,9 @@ class SrclocModule(mp_module.MPModule):
         self.add_command('slp', self.cmd_load_pompy, "Load pompy data by number", ['slp no'])#['<%s|all>' % x])
         self.pompyuse = 0 # 0 means use Gaussian
         self.maxstr = 1
-        self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/blank.csv', delimiter=',', dtype="float32").T)
-        print("No Pompy data loaded. Using gaussian.")
         self.datasx = 1000
         self.datasy = 1000
+        self.pompy = np.zeros((self.datasx, self.datasy), dtype="float32")
         self.offx = 100 #x is North
         self.offy = 500
         self.cenx = 920
