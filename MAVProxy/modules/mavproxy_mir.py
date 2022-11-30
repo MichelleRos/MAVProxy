@@ -66,7 +66,7 @@ class MirModule(mp_module.MPModule):
             # message is sent when origin is initially set and when arming, apparently. Unfortunately no apparent way of triggering it.
             self.hlat = m.latitude
             self.hlon = m.longitude
-            print("MIR: Origin lat lon set to: %.0f %.0f" % (self.hlat, self.hlon))
+            print("MIR: Origin lat lon set to: %.7f %.7f" % (self.hlat*1.0e-7, self.hlon*1.0e-7))
             self.orst = False
         if m.get_type() == 'GLOBAL_POSITION_INT':
             self.alt = m.alt
