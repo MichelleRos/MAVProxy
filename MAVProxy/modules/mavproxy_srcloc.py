@@ -223,8 +223,8 @@ class SrclocModule(mp_module.MPModule):
             self.pompy = np.flipud(np.loadtxt('/home/miche/pompy/ppo/'+filename+'.csv', delimiter=',', dtype="float32").T)
             self.maxstr = np.amax(self.pompy)
             self.cenx, self.ceny = np.unravel_index(np.argmax(self.pompy, axis=None), self.pompy.shape)
-            print("Max strength is", self.maxstr, "centre pos is", self.cenx, self.ceny)
             self.slat, self.slon = self.toll((self.cenx-self.offx)/100,(self.ceny-self.offy)/100)
+            print("Max strength is", self.maxstr, "centre pos is", self.cenx, self.ceny, "srcpos is %.7f %.7f" %(self.slat*1.0e-7, self.slon*1.0e-7))
 
     def idle_task(self):
         '''called on idle'''
