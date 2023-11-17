@@ -317,6 +317,44 @@ class ParamState:
                         s += " (DEFAULT: %s)" % info_default
                 print(s)
 
+    def param_diffn(self, args):
+        '''handle param diff without showing defaults'''
+        wildcard = '*'
+        if len(args) < 1 or args[0].find('*') != -1:
+            defaults = self.default_params
+            if defaults is None and self.vehicle_name is not None:
+                filename = mp_util.dot_mavproxy("%s-defaults.parm" % self.vehicle_name)
+                if not os.path.exists(filename):
+                    print("Please run 'param download' first (vehicle_name=%s)" % self.vehicle_name)
+                    return
+                defaults = mavparm.MAVParmDict()
+                defaults.load(filename)
+            if len(args) >= 1:
+                wildcard = args[0]
+        else:
+            filename = args[0]
+            if not os.path.exists(filename):
+                print("Can't find defaults file %s" % filename)
+                return
+            defaults = mavparm.MAVParmDict()
+            defaults.load(filename)
+            if len(args) == 2:
+                wildcard = args[1]
+        print("\nParameter        Current")
+        for p in self.mav_param:
+            p = str(p).upper()
+            if not p in defaults:
+                continue
+            if self.mav_param[p] == defaults[p]:
+                continue
+            if fnmatch.fnmatch(p, wildcard.upper()):
+                s1 = "%f" % self.mav_param[p]
+                s2 = "%f" % defaults[p]
+                if s1 == s2:
+                    continue
+                s = "%-16.16s %s" % (str(p), s1)
+                print(s)
+
     def param_savechanged(self, args):
         '''handle param savechanged'''
         if len(args) < 1:
@@ -402,7 +440,7 @@ class ParamState:
     def handle_command(self, master, mpstate, args):
         '''handle parameter commands'''
         param_wildcard = "*"
-        usage="Usage: param <fetch|ftp|save|savechanged|revert|set|show|load|preload|forceload|ftpload|diff|download|check|help|watch|unwatch|watchlist>"
+        usage="Usage: param <fetch|ftp|save|savechanged|revert|set|show|load|preload|forceload|ftpload|diff|diffn|download|check|help|watch|unwatch|watchlist>"
         if len(args) < 1:
             print(usage)
             return
@@ -444,6 +482,8 @@ class ParamState:
             self.mav_param.save(args[1].strip('"'), param_wildcard, verbose=True)
         elif args[0] == "diff":
             self.param_diff(args[1:])
+        elif args[0] == "diffn":
+            self.param_diffn(args[1:])
         elif args[0] == "savechanged":
             self.param_savechanged(args[1:])
         elif args[0] == "revert":
@@ -652,7 +692,7 @@ class ParamModule(mp_module.MPModule):
         self.add_command('param', self.cmd_param, "parameter handling",
                          ["<download|status>",
                           "<set|show|fetch|ftp|help|apropos|revert> (PARAMETER)",
-                          "<load|save|savechanged|diff|forceload|ftpload> (FILENAME)",
+                          "<load|save|savechanged|diff|diffn|forceload|ftpload> (FILENAME)",
                           "<set_xml_filepath> (FILEPATH)"
                          ])
         if mp_util.has_wxpython:
