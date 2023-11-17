@@ -126,7 +126,7 @@ class MEState(object):
             "condition" : ["(VARIABLE)"],
             "graph"     : ['(VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE)'],
             "map"       : ['(VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE) (VARIABLE)'],
-            "param"     : ['download', 'check', 'help (PARAMETER)'],
+            "param"     : ['download', 'check', 'help (PARAMETER)', 'diff (PARAMETER)', 'diffn (PARAMETER)'],
             }
         self.aliases = {}
         self.graphs = []
@@ -917,6 +917,29 @@ def cmd_param_diff(args):
                     s += " (DEFAULT: %s)" % info_default
             print(s)
 
+def cmd_param_diffn(args):
+    '''show parameter changed using 4.3.x defaults, without showing default'''
+    verbose = mestate.settings.paramdocs
+    mlog = mestate.mlog
+    if not hasattr(mlog, 'param_defaults'):
+        print("No param defaults in log")
+        return
+    if len(args) > 0:
+        wildcard = args[0]
+    else:
+        wildcard = '*'
+    k = sorted(mlog.params.keys())
+    defaults = mlog.param_defaults
+    for p in k:
+        p = str(p).upper()
+        if not p in defaults:
+            continue
+        if mlog.params[p] == defaults[p]:
+            continue
+        if fnmatch.fnmatch(p, wildcard.upper()):
+            s = "%-16.16s %f" % (str(p), mlog.params[p])
+            print(s)
+
 def cmd_param_save(args, changed_only=False):
     '''save parameters'''
     mlog = mestate.mlog
@@ -1055,6 +1078,9 @@ def cmd_param(args):
             return
         if args[0] == 'diff':
             cmd_param_diff(args[1:])
+            return
+        if args[0] == 'diffn':
+            cmd_param_diffn(args[1:])
             return
         if args[0] == 'save':
             # save parameters
