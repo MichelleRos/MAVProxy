@@ -859,7 +859,7 @@ def process_mavlink(slave):
             if mpstate.status.watch:
                 for msg_type in mpstate.status.watch:
                     if fnmatch.fnmatch(m.get_type().upper(), msg_type.upper()):
-                        mpstate.console.writeln('> '+ str(m))
+                        mpstate.console.writeln('> '+ str(m) + 'src: ' + m.get_srcSystem())
                         break
     mpstate.status.counters['Slave'] += 1
 
