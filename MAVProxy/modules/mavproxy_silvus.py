@@ -177,11 +177,12 @@ class SilvusModule(mp_module.MPModule):
         return nbr_mcs
 
     def make_request(self, radio, post_data):
+        # print(f"Making request to {radio} {post_data} {radio.port}")
         uri = self.url(radio.ip, 'streamscape_api', port=radio.port)
         try:
             result = requests.post(uri, data=post_data)
         except Exception as e:  # FIXME: narrow this exception
-            print(f"requests exception: {e}")
+            self.mpstate.console.writeln(f"requests exception: {e}")
             return None
         return result
 
