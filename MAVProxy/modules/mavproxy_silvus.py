@@ -48,6 +48,8 @@ class SilvusModule(mp_module.MPModule):
         self.thread.start()
         self.values = {}
 
+        self.fp = open("/tmp/mp_silvus_err.txt", "w")
+
     def cmd_silvus(self, args):
         '''silvus commands'''
         if len(args) == 0:
@@ -182,7 +184,7 @@ class SilvusModule(mp_module.MPModule):
         try:
             result = requests.post(uri, data=post_data)
         except Exception as e:  # FIXME: narrow this exception
-            self.mpstate.console.writeln(f"requests exception: {e}")
+            self.fp.write(f"requests exception: {e}\n")
             return None
         return result
 
@@ -261,7 +263,7 @@ class SilvusModule(mp_module.MPModule):
             try:
                 self.values['LOCNSE'] = float(self.get_noise(gnd))
             except Exception as e:
-                self.mpstate.console.writeln(f"Exception caught! {e=}")
+                self.fp.write(f"Exception caught! {e=}\n")
                 pass
         if air is not None:
             try:
@@ -300,9 +302,9 @@ class SilvusModule(mp_module.MPModule):
                 self.get_radio_data()
             except Exception as ex:
                 if self.silvus_settings.debug > 0:
-                    self.mpstate.console.writeln(ex)
+                    self.fp.write(f"Main err: {ex}\n")
                 if self.silvus_settings.debug > 1:
-                    self.mpstate.console.writeln(self.get_exception_stacktrace(ex))
+                    self.fp.write(f"Main stacktrace: {self.get_exception_stacktrace(ex)}\n")
 
 
 def init(mpstate):
