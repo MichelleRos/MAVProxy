@@ -234,12 +234,12 @@ class SilvusModule(mp_module.MPModule):
         if gnd and air:
             try:
                 self.values['TXMCS'] = float(self.get_neighbor_mcs(gnd, air))
-            except Exception:
-                pass
+            except Exception as e:
+                self.fp.write(f"TXMCS exception: {e}\n")
             try:
                 self.values['RXMCS'] = float(self.get_neighbor_mcs_rx(gnd, air))
-            except Exception:
-                pass
+            except Exception as e:
+                self.fp.write(f"RXMCS exception: {e}\n")
             try:
                 rssi = self.get_rssi(gnd, air)
                 if len(rssi) >= 4:
@@ -247,8 +247,10 @@ class SilvusModule(mp_module.MPModule):
                     self.values['TXRSSI2'] = float(rssi[1])
                     self.values['TXRSSI3'] = float(rssi[2])
                     self.values['TXRSSI4'] = float(rssi[3])
-            except Exception:
-                pass
+                else:
+                    self.fp.write(f"TXRSSI is {rssi}, len is {len(rssi)}\n")
+            except Exception as e:
+                self.fp.write(f"TXRSSI exception: {e}\n")
             try:
                 rssi = self.get_rssi(air, gnd)
                 if len(rssi) >= 4:
@@ -256,36 +258,38 @@ class SilvusModule(mp_module.MPModule):
                     self.values['RXRSSI2'] = float(rssi[1])
                     self.values['RXRSSI3'] = float(rssi[2])
                     self.values['RXRSSI4'] = float(rssi[3])
-            except Exception:
-                pass
+                else:
+                    self.fp.write(f"RXRSSI is {rssi}, len is {len(rssi)}\n")
+            except Exception as e:
+                self.fp.write(f"RXRSSI exception: {e}\n")
+
 
         if gnd:
             try:
                 self.values['LOCNSE'] = float(self.get_noise(gnd))
             except Exception as e:
                 self.fp.write(f"Exception caught! {e=}\n")
-                pass
         if air is not None:
             try:
                 self.values['REMNSE'] = float(self.get_noise(air))
-            except Exception:
-                pass
+            except Exception as e:
+                self.fp.write(f"REMNSE exception: {e}\n")
 
         if gnd:
             try:
                 self.values['LINKSNR'] = float(self.network_status(gnd)[2])
-            except Exception:
-                pass
+            except Exception as e:
+                self.fp.write(f"LINKSNR exception: {e}\n")
 
         if gnd and air:
             try:
                 self.values['LOCTPUT'] = float(self.get_throughput(gnd, air))
-            except Exception:
-                pass
+            except Exception as e:
+                self.fp.write(f"LOCTPUT exception: {e}\n")
             try:
                 self.values['REMTPUT'] = float(self.get_throughput(air, gnd))
-            except Exception:
-                pass
+            except Exception as e:
+                self.fp.write(f"REMTPUT exception: {e}\n")
 
         for f in self.values:
             self.send_named_float('SR_' + f, self.values[f])
